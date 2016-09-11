@@ -69,7 +69,9 @@ SectionEnd
 Section "Yubico Authenticator"
   SectionIn RO
   SetOutPath $INSTDIR
-  FILE "..\dist\Yubico Authenticator\*"
+  File "..\dist\Yubico Authenticator\*"
+  File /r "..\dist\Yubico Authenticator\tcl"
+  File /r "..\dist\Yubico Authenticator\tk"
 SectionEnd
 
 Var MYTMP
@@ -127,7 +129,7 @@ Section "Uninstall"
   ${nsProcess::Unload}
 
   ; Remove all
-  DELETE "$INSTDIR\*"
+  RMDir /R "$INSTDIR"
 
   ; Remove shortcuts, if any
   !insertmacro MUI_STARTMENU_GETFOLDER Application $MUI_TEMP
@@ -150,7 +152,4 @@ Section "Uninstall"
   startMenuDeleteLoopDone:
 
   DeleteRegKey /ifempty HKCU "Software\Yubico\yubioath-desktop"
-
-  ; Remove directories used
-  RMDir "$INSTDIR"
 SectionEnd
