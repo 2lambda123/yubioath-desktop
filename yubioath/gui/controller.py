@@ -123,17 +123,41 @@ class Timer(QtCore.QObject):
     def __init__(self, interval):
         super(Timer, self).__init__()
         self._interval = interval
+        self._enabled = True
+        self._running = True
 
+        self._calc_time()
+        QtCore.QTimer.singleShot(self._wait_time, self._tick)
+
+    def _calc_time(self):
+        # First calculate which code timestamp we're at.
         now = time()
-        rem = now % interval
+        rem = now % self._interval
         self._time = int(now - rem)
-        QtCore.QTimer.singleShot((self._interval - rem) * 1000, self._tick)
+
+        # Now determine how long to wait until the next _tick()
+        rem = self._interval - rem
+        if rem > 5:
+            self._wait_time = 4500
+        else:
+            # Intentionally overshoot by minimal amount of time possible in
+            # order to fire the time_changed signal immediately after the
+            # deadline.
+            self._wait_time = int(rem * 1000) + 50
 
     def _tick(self):
-        self._time += self._interval
-        self.time_changed.emit(self._time)
-        next_time = self._time + self._interval
-        QtCore.QTimer.singleShot((next_time - time()) * 1000, self._tick)
+        last = self._time
+        self._calc_time()
+        if self._enabled:
+            if self._time != last:
+                self.time_changed.emit(self._time)
+        QtCore.QTimer.singleShot(self._wait_time, self._tick)
+
+    def stop(self):
+        self._enabled = False
+
+    def start(self):
+        self._enabled = True
 
     @property
     def time(self):
@@ -419,6 +443,12 @@ class GuiController(QtCore.QObject, Controller):
             if self.unlock(dev):
                 key = super(GuiController, self).set_password(dev, password)
                 self._keystore.put(dev.id, key, remember)
+
+    def start(self):
+        self.timer.start()
+
+    def stop(self):
+        self.timer.stop()
 
     def forget_passwords(self):
         self._keystore.forget()
