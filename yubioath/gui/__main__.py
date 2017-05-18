@@ -148,6 +148,8 @@ class YubiOathApplication(qt.Application):
         if show:
             self.window.show()
             self.window.raise_()
+        else:
+            self._controller.stop()
 
     def _build_menu_bar(self):
         file_menu = self.window.menuBar().addMenu(m.menu_file)

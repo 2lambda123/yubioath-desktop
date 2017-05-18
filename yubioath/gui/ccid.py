@@ -24,6 +24,8 @@
 # non-source form of such a combination shall include the source code
 # for the parts of OpenSSL used as well as that of the covered work.
 
+import time
+
 from ..core.ccid import ScardDevice
 from smartcard import System
 from smartcard.ReaderMonitoring import ReaderMonitor, ReaderObserver
@@ -38,7 +40,7 @@ class _CcidReaderObserver(ReaderObserver):
 
     def __init__(self, controller):
         self._controller = weakref.ref(controller)
-        self._monitor = ReaderMonitor()
+        self._monitor = ReaderMonitor(startOnDemand=False, period=1)
         self._monitor.addObserver(self)
 
     def update(self, observable, tup):
@@ -49,6 +51,21 @@ class _CcidReaderObserver(ReaderObserver):
 
     def delete(self):
         self._monitor.deleteObservers()
+
+    def set_poll_interval(self, interval):
+        success = False
+        attempts = 0
+        sleeptime = 0.01
+        while attempts < 5:
+            try:
+                self._monitor.rmthread.period = interval
+                success = True
+                break
+            except:
+                time.sleep(sleeptime)
+                sleeptime = 0.1
+            attempts += 1
+        return success
 
 
 class _CcidCardObserver(CardObserver):
@@ -67,6 +84,22 @@ class _CcidCardObserver(CardObserver):
 
     def delete(self):
         self._monitor.deleteObservers()
+
+    def set_poll_interval(self, interval):
+        # pyscard doesn't make the polling interval configurable :(
+        success = False
+        attempts = 0
+        sleeptime = 0.01
+        while attempts < 5:
+            try:
+                self._monitor.rmthread.cardrequest.pcsccardrequest.pollinginterval = interval
+                success = True
+                break
+            except:
+                time.sleep(sleeptime)
+                sleeptime = 0.1
+            attempts += 1
+        return success
 
 
 class CardStatus:
@@ -90,6 +123,7 @@ class CardWatcher(QtCore.QObject):
             self._update(System.readers(), [])
         except EstablishContextException:
             pass  # No PC/SC context!
+        self.active()
 
     def _update(self, added, removed):
         if self._reader in removed:  # Device removed
@@ -136,6 +170,14 @@ class CardWatcher(QtCore.QObject):
                 return dev
             except SmartcardException:
                 self._set_status(CardStatus.InUse)
+
+    def passive(self):
+        self._reader_observer.set_poll_interval(5)
+        self._card_observer.set_poll_interval(5)
+
+    def active(self):
+        self._reader_observer.set_poll_interval(1)
+        self._card_observer.set_poll_interval(0.25)
 
     def __del__(self):
         self._reader_observer.delete()

@@ -445,10 +445,12 @@ class GuiController(QtCore.QObject, Controller):
                 self._keystore.put(dev.id, key, remember)
 
     def start(self):
+        self.watcher.active()
         self.timer.start()
 
     def stop(self):
         self.timer.stop()
+        self.watcher.passive()
 
     def forget_passwords(self):
         self._keystore.forget()

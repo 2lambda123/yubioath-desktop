@@ -73,6 +73,8 @@ class PollerThread(threading.Thread):
         self._watcher = watcher
         self.daemon = True
         self.running = True
+        self.event = threading.Event()
+        self.poll_interval = 0.5
 
     def run(self):
         old_readers = []
@@ -80,9 +82,18 @@ class PollerThread(threading.Thread):
             readers = self._list()
             added = [r for r in readers if r not in old_readers]
             removed = [r for r in old_readers if r not in readers]
-            self._watcher._update(added, removed)
+            if added or removed:
+                self._watcher._update(added, removed)
             old_readers = readers
-            time.sleep(2)
+            self.event.wait(self.poll_interval)
+            self.event.clear()
+
+    def wake(self):
+        self.event.set()
+
+    def set_poll_interval(self, interval):
+        self.poll_interval = interval
+        self.wake()
 
     def _list(self):
         try:
@@ -166,6 +177,12 @@ class CardWatcher(QtCore.QObject):
                 return LLScardDevice(hcontext, hcard, dwActiveProtocol)
             except Exception:
                 self._set_status(CardStatus.InUse)
+
+    def passive(self):
+        self._thread.set_poll_interval(10)
+
+    def active(self):
+        self._thread.set_poll_interval(0.5)
 
     def __del__(self):
         self._thread.running = False
