@@ -1,3 +1,9 @@
+* Version 3.1.2
+ ** Fix timer drift caused by internal timekeeping.
+ ** Suspend timers when minimizing to the tray, and resume them when the window is opened again.
+
+* Version 3.1.1 (never released by Yubico)
+
 * Version 3.1.0b (released 2016-12-16)
  ** Fix crash on macOS related to how the application was built.
     New installer for macOS based on previous release.
