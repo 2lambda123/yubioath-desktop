@@ -34,7 +34,6 @@ from smartcard.scard import (
 )
 from PyQt5 import QtCore
 import threading
-import time
 
 
 class LLScardDevice(object):
