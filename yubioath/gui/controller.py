@@ -39,7 +39,7 @@ from time import time
 from collections import namedtuple
 
 import sys
-if sys.platform == 'win32':  # Windows has issues with the high level API.
+if True or sys.platform == 'win32':  # Windows has issues with the high level API.
     from .ccid_poll import observe_reader
 else:
     from .ccid import observe_reader
