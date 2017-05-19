@@ -26,7 +26,7 @@
 
 from yubioath.yubicommon import qt
 from .. import messages as m
-from PySide import QtGui
+from PyQt5 import QtWidgets
 
 
 class SetPasswordDialog(qt.Dialog):
@@ -38,21 +38,21 @@ class SetPasswordDialog(qt.Dialog):
         self._build_ui()
 
     def _build_ui(self):
-        layout = QtGui.QFormLayout(self)
+        layout = QtWidgets.QFormLayout(self)
 
-        self._new_pass = QtGui.QLineEdit()
-        self._new_pass.setEchoMode(QtGui.QLineEdit.Password)
+        self._new_pass = QtWidgets.QLineEdit()
+        self._new_pass.setEchoMode(QtWidgets.QLineEdit.Password)
         layout.addRow(m.new_pass, self._new_pass)
 
-        self._ver_pass = QtGui.QLineEdit()
-        self._ver_pass.setEchoMode(QtGui.QLineEdit.Password)
+        self._ver_pass = QtWidgets.QLineEdit()
+        self._ver_pass.setEchoMode(QtWidgets.QLineEdit.Password)
         layout.addRow(m.ver_pass, self._ver_pass)
 
-        self._remember = QtGui.QCheckBox(m.remember)
+        self._remember = QtWidgets.QCheckBox(m.remember)
         layout.addRow(self._remember)
 
-        btns = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok |
-                                      QtGui.QDialogButtonBox.Cancel)
+        btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok |
+                                      QtWidgets.QDialogButtonBox.Cancel)
         btns.accepted.connect(self._save)
         btns.rejected.connect(self.reject)
         layout.addRow(btns)
@@ -62,7 +62,7 @@ class SetPasswordDialog(qt.Dialog):
             self._new_pass.setText('')
             self._ver_pass.setText('')
             self._new_pass.setFocus()
-            QtGui.QMessageBox.warning(self, m.pass_mismatch,
+            QtWidgets.QMessageBox.warning(self, m.pass_mismatch,
                                       m.pass_mismatch_desc)
         else:
             self.accept()

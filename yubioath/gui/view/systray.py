@@ -24,33 +24,33 @@
 # non-source form of such a combination shall include the source code
 # for the parts of OpenSSL used as well as that of the covered work.
 
-from PySide import QtGui
+from PyQt5 import QtWidgets
 from .. import messages as m
 import sys
 
 
-class Systray(QtGui.QSystemTrayIcon):
+class Systray(QtWidgets.QSystemTrayIcon):
 
     def __init__(self, parent):
         super(Systray, self).__init__(parent)
 
-        self._reason = QtGui.QSystemTrayIcon.ActivationReason.Trigger
+        self._reason = QtWidgets.QSystemTrayIcon.Trigger
 
         # Require double-click on OSX since single click opens menu.
         if sys.platform == 'darwin':
-            self._reason = QtGui.QSystemTrayIcon.ActivationReason.DoubleClick
+            self._reason = QtWidgets.QSystemTrayIcon.DoubleClick
 
         self.activated.connect(self._activated)
         self._build_menu()
 
     def _build_menu(self):
-        menu = QtGui.QMenu()
+        menu = QtWidgets.QMenu()
 
-        show_action = QtGui.QAction(m.action_show, menu)
+        show_action = QtWidgets.QAction(m.action_show, menu)
         show_action.triggered.connect(self._show)
         menu.addAction(show_action)
 
-        quit_action = QtGui.QAction(m.action_quit, menu)
+        quit_action = QtWidgets.QAction(m.action_quit, menu)
         quit_action.triggered.connect(self.quit)
         menu.addAction(quit_action)
 

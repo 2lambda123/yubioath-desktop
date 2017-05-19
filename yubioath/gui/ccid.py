@@ -32,7 +32,7 @@ from smartcard.ReaderMonitoring import ReaderMonitor, ReaderObserver
 from smartcard.CardMonitoring import CardMonitor, CardObserver
 from smartcard.Exceptions import SmartcardException
 from smartcard.pcsc.PCSCExceptions import EstablishContextException
-from PySide import QtCore
+from PyQt5 import QtCore
 import weakref
 
 
@@ -107,7 +107,7 @@ class CardStatus:
 
 
 class CardWatcher(QtCore.QObject):
-    status_changed = QtCore.Signal(int)
+    status_changed = QtCore.pyqtSignal(int)
 
     def __init__(self, reader_name, callback, parent=None):
         super(CardWatcher, self).__init__(parent)

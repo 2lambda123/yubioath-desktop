@@ -1,4 +1,4 @@
-from PySide.QtGui import QCheckBox, QGridLayout, QLabel, \
+from PyQt5.QtWidgets import QCheckBox, QGridLayout, QLabel, \
     QDialogButtonBox
 from yubioath.gui.messages import ccid_disabled
 from yubioath.yubicommon.qt import Dialog

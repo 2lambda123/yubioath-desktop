@@ -34,7 +34,7 @@ from .keystore import get_keystore
 from . import messages as m
 from yubioath.core.utils import ccid_supported_but_disabled
 from yubioath.yubicommon.qt import get_active_window, MutexLocker
-from PySide import QtCore, QtGui
+from PyQt5 import QtCore, QtGui
 from time import time
 from collections import namedtuple
 
@@ -53,7 +53,7 @@ INF = float('inf')
 
 
 class CredEntry(QtCore.QObject):
-    changed = QtCore.Signal()
+    changed = QtCore.pyqtSignal()
 
     def __init__(self, cred, controller):
         super(CredEntry, self).__init__()
@@ -118,7 +118,7 @@ def names(creds):
 
 
 class Timer(QtCore.QObject):
-    time_changed = QtCore.Signal(int)
+    time_changed = QtCore.pyqtSignal(int)
 
     def __init__(self, interval):
         super(Timer, self).__init__()
@@ -165,8 +165,8 @@ class Timer(QtCore.QObject):
 
 
 class GuiController(QtCore.QObject, Controller):
-    refreshed = QtCore.Signal()
-    ccid_disabled = QtCore.Signal()
+    refreshed = QtCore.pyqtSignal()
+    ccid_disabled = QtCore.pyqtSignal()
 
     def __init__(self, app, settings):
         super(GuiController, self).__init__()

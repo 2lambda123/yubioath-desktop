@@ -40,7 +40,7 @@ Box = namedtuple('Box', ['x', 'y', 'w', 'h'])
 
 
 def is_dark(color):  # If any R, G, or B value is < 200 we consider it dark.
-    return any(byte2int(c) < 200 for c in color)
+    return any(ord(c) < 200 for c in color)
 
 
 def buffer_matches(matched):
@@ -76,13 +76,19 @@ def check_line(pixels):
 
 
 def check_row(line, bpp, x_offs, x_width):
-    return check_line([line[i*bpp:(i+1)*bpp]
-                       for i in range(x_offs, x_offs + x_width)])
+    pixels = []
+    for i in range(x_offs, x_offs + x_width):
+        pixels.append(line[i*bpp:(i+1)*bpp])
+    return check_line(pixels)
 
 
 def check_col(image, bpp, x, y_offs, y_height):
-    return check_line([image.scanLine(i)[x*bpp:(x+1)*bpp]
-                       for i in range(y_offs, y_offs + y_height)])
+    pixels = []
+    for i in range(y_offs, y_offs + y_height):
+        line = image.scanLine(i)
+        line.setsize(image.bytesPerLine())
+        pixels.append(line[x*bpp:(x+1)*bpp])
+    return check_line(pixels)
 
 
 def read_line(line, bpp, x_offs, x_width):
@@ -112,6 +118,7 @@ def read_bits(image, bpp, img_x, img_y, img_w, img_h, size):
     for qr_y in range(size):
         y = img_y + int(qr_y_h / 2 + qr_y * qr_y_h)
         img_line = image.scanLine(y)
+        img_line.setsize(image.bytesPerLine())
         qr_line = []
         for qr_x in range(size):
             x = img_x + int(qr_x_w / 2 + qr_x * qr_x_w)
@@ -146,6 +153,7 @@ def parse_qr_codes(image, min_res=2):
 
         # Determine resolution by reading timing pattern
         line = image.scanLine(min_y + int(6.5 / 7 * max(tl.h, tr.h)))
+        line.setsize(image.bytesPerLine())
         _, line_data = read_line(line, bpp, min_x, width)
         size = len(line_data) + 12
 
@@ -158,7 +166,9 @@ def locate_finders(image, min_res):
     bpp = image.bytesPerLine() // size.width()
     finders = set()
     for y in range(0, size.height(), min_res * 3):
-        for (x, w) in check_row(image.scanLine(y), bpp, 0, size.width()):
+        line = image.scanLine(y)
+        line.setsize(image.bytesPerLine())
+        for (x, w) in check_row(line, bpp, 0, size.width()):
             x_offs = x + w // 2
             y_offs = max(0, y - w)
             y_height = min(size.height() - y_offs, 2 * w)

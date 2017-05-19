@@ -32,7 +32,7 @@ from smartcard.scard import (
     SCARD_S_SUCCESS, SCARD_UNPOWER_CARD, SCARD_SCOPE_USER, SCARD_SHARE_SHARED,
     SCARD_PROTOCOL_T0, SCARD_PROTOCOL_T1
 )
-from PySide import QtCore
+from PyQt5 import QtCore
 import threading
 import time
 
@@ -118,7 +118,7 @@ class PollerThread(threading.Thread):
 
 
 class CardWatcher(QtCore.QObject):
-    status_changed = QtCore.Signal(int)
+    status_changed = QtCore.pyqtSignal(int)
 
     def __init__(self, reader_name, callback, parent=None):
         super(CardWatcher, self).__init__(parent)

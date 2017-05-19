@@ -30,7 +30,7 @@ from ...core.utils import parse_uri
 from .. import messages as m
 from ..qrparse import parse_qr_codes
 from ..qrdecode import decode_qr_data
-from PySide import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from base64 import b32decode
 import re
 
@@ -50,11 +50,11 @@ class B32Validator(QtGui.QValidator):
     def validate(self, value, pos):
         try:
             self.fixup(value)
-            return QtGui.QValidator.Acceptable
+            return (QtGui.QValidator.Acceptable, value, pos)
         except:
             if self.partial.match(value):
-                return QtGui.QValidator.Intermediate
-        return QtGui.QValidator.Invalid
+                return (QtGui.QValidator.Intermediate, value, pos)
+        return (QtGui.QValidator.Invalid, value, pos)
 
 
 class AddCredDialog(qt.Dialog):
@@ -69,47 +69,47 @@ class AddCredDialog(qt.Dialog):
         self._build_ui()
 
     def _build_ui(self):
-        layout = QtGui.QFormLayout(self)
+        layout = QtWidgets.QFormLayout(self)
 
-        self._qr_btn = QtGui.QPushButton(QtGui.QIcon(':/qr.png'), m.qr_scan)
+        self._qr_btn = QtWidgets.QPushButton(QtGui.QIcon(':/qr.png'), m.qr_scan)
         self._qr_btn.clicked.connect(self._scan_qr)
         layout.addRow(self._qr_btn)
 
-        self._cred_name = QtGui.QLineEdit()
+        self._cred_name = QtWidgets.QLineEdit()
         self._cred_name.setValidator(NAME_VALIDATOR)
         layout.addRow(m.cred_name, self._cred_name)
 
-        self._cred_key = QtGui.QLineEdit()
+        self._cred_key = QtWidgets.QLineEdit()
         self._cred_key.setValidator(B32Validator())
         layout.addRow(m.cred_key, self._cred_key)
 
-        layout.addRow(QtGui.QLabel(m.cred_type))
-        self._cred_type = QtGui.QButtonGroup(self)
-        self._cred_totp = QtGui.QRadioButton(m.cred_totp)
+        layout.addRow(QtWidgets.QLabel(m.cred_type))
+        self._cred_type = QtWidgets.QButtonGroup(self)
+        self._cred_totp = QtWidgets.QRadioButton(m.cred_totp)
         self._cred_totp.setProperty('value', TYPE_TOTP)
         self._cred_type.addButton(self._cred_totp)
         layout.addRow(self._cred_totp)
-        self._cred_hotp = QtGui.QRadioButton(m.cred_hotp)
+        self._cred_hotp = QtWidgets.QRadioButton(m.cred_hotp)
         self._cred_hotp.setProperty('value', TYPE_HOTP)
         self._cred_type.addButton(self._cred_hotp)
         layout.addRow(self._cred_hotp)
         self._cred_totp.setChecked(True)
 
-        self._n_digits = QtGui.QComboBox()
+        self._n_digits = QtWidgets.QComboBox()
         self._n_digits.addItems(['6', '8'])
         layout.addRow(m.n_digits, self._n_digits)
 
-        self._algorithm = QtGui.QComboBox()
+        self._algorithm = QtWidgets.QComboBox()
         self._algorithm.addItems(['SHA-1', 'SHA-256'])
         layout.addRow(m.algorithm, self._algorithm)
 
-        self._require_touch = QtGui.QCheckBox(m.require_touch)
+        self._require_touch = QtWidgets.QCheckBox(m.require_touch)
         # Touch-required support not available before 4.2.6
         if self._version >= (4, 2, 6):
             layout.addRow(self._require_touch)
 
-        btns = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok |
-                                      QtGui.QDialogButtonBox.Cancel)
+        btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok |
+                                      QtWidgets.QDialogButtonBox.Cancel)
         btns.accepted.connect(self._save)
         btns.rejected.connect(self.reject)
         layout.addRow(btns)
@@ -125,8 +125,8 @@ class AddCredDialog(qt.Dialog):
         return None
 
     def _scan_qr(self):
-        winId = QtGui.QApplication.desktop().winId()
-        qimage = QtGui.QPixmap.grabWindow(winId).toImage()
+        screen = QtWidgets.QApplication.primaryScreen()
+        qimage = screen.grabWindow(0).toImage()
         self._worker.post(m.qr_scanning, (self._do_scan_qr, qimage),
                           self._handle_qr)
 
@@ -137,13 +137,13 @@ class AddCredDialog(qt.Dialog):
             algo = parsed.get('algorithm', 'SHA1').upper()
 
             if otp_type not in ['totp', 'hotp']:
-                QtGui.QMessageBox.warning(
+                QtWidgets.QMessageBox.warning(
                     self,
                     m.qr_invalid_type,
                     m.qr_invalid_type_desc)
                 return
             if n_digits not in ['6', '8']:
-                QtGui.QMessageBox.warning(
+                QtWidgets.QMessageBox.warning(
                     self,
                     m.qr_invalid_digits,
                     m.qr_invalid_digits_desc)
@@ -151,7 +151,7 @@ class AddCredDialog(qt.Dialog):
             if algo not in ['SHA1', 'SHA256']:
                 # RFC6238 says SHA512 is also supported,
                 # but it's not implemented here yet.
-                QtGui.QMessageBox.warning(
+                QtWidgets.QMessageBox.warning(
                     self,
                     m.qr_invalid_algo,
                     m.qr_invalid_algo_desc)
@@ -166,7 +166,7 @@ class AddCredDialog(qt.Dialog):
             else:
                 self._cred_hotp.setChecked(True)
         else:
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self,
                 m.qr_not_found,
                 m.qr_not_found_desc)
@@ -175,18 +175,18 @@ class AddCredDialog(qt.Dialog):
         return self._cred_name.text() in self._existing_entry_names
 
     def _confirm_overwrite(self):
-        return QtGui.QMessageBox.question(
+        return QtWidgets.QMessageBox.question(
             self, m.overwrite_entry, m.overwrite_entry_desc,
-            QtGui.QMessageBox.Yes | QtGui.QMessageBox.Yes,
-            QtGui.QMessageBox.No) == QtGui.QMessageBox.Yes
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Yes,
+            QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes
 
     def _save(self):
         if not self._cred_name.hasAcceptableInput():
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                     self, m.invalid_name, m.invalid_name_desc)
             self._cred_name.selectAll()
         elif not self._cred_key.hasAcceptableInput():
-            QtGui.QMessageBox.warning(self, m.invalid_key, m.invalid_key_desc)
+            QtWidgets.QMessageBox.warning(self, m.invalid_key, m.invalid_key_desc)
             self._cred_key.selectAll()
         elif self._entry_exists() and not self._confirm_overwrite():
             self._cred_key.selectAll()

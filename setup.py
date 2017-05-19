@@ -45,11 +45,11 @@ setup(
     },
     setup_requires=[],
     yc_requires=['ctypes', 'qt'],
-    yc_requires_exclude=['PySide'],
+    yc_requires_exclude=['PyQt5'],
     install_requires=['pyscard', 'pycrypto'],
     extras_require={
         'cli': ['click'],
-        'gui': ['PySide']
+        'gui': ['PyQt5']
     },
     cmdclass={
         'executable': executable,

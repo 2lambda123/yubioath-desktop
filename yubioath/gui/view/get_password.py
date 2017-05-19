@@ -26,7 +26,7 @@
 
 from yubioath.yubicommon import qt
 from .. import messages as m
-from PySide import QtGui
+from PyQt5 import QtWidgets
 
 
 class GetPasswordDialog(qt.Dialog):
@@ -35,16 +35,16 @@ class GetPasswordDialog(qt.Dialog):
         super(GetPasswordDialog, self).__init__(parent)
         self.setWindowTitle(m.pass_required)
 
-        layout = QtGui.QFormLayout(self)
-        self._pwd_field = QtGui.QLineEdit()
-        self._pwd_field.setEchoMode(QtGui.QLineEdit.Password)
+        layout = QtWidgets.QFormLayout(self)
+        self._pwd_field = QtWidgets.QLineEdit()
+        self._pwd_field.setEchoMode(QtWidgets.QLineEdit.Password)
         layout.addRow(m.password, self._pwd_field)
 
-        self._remember = QtGui.QCheckBox(m.remember)
+        self._remember = QtWidgets.QCheckBox(m.remember)
         layout.addRow(self._remember)
 
-        btns = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok |
-                                      QtGui.QDialogButtonBox.Cancel)
+        btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok |
+                                      QtWidgets.QDialogButtonBox.Cancel)
         btns.accepted.connect(self.accept)
         btns.rejected.connect(self.reject)
         layout.addWidget(btns)

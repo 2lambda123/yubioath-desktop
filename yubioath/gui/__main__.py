@@ -24,7 +24,7 @@
 # non-source form of such a combination shall include the source code
 # for the parts of OpenSSL used as well as that of the covered work.
 
-from PySide import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from yubioath import __version__ as version
 from yubioath.gui.view.ccid_disabled import CcidDisabledDialog
@@ -62,7 +62,7 @@ ABOUT_TEXT = """
 """ % (m.app_name, m.copyright, m.version_1, m.libraries)
 
 
-class MainWidget(QtGui.QStackedWidget):
+class MainWidget(QtWidgets.QStackedWidget):
 
     def __init__(self, controller):
         super(MainWidget, self).__init__()
@@ -86,7 +86,7 @@ class MainWidget(QtGui.QStackedWidget):
 
     def _build_ui(self):
         self.codes_widget = CodesWidget(self._controller)
-        self.no_key_widget = QtGui.QLabel(m.no_key)
+        self.no_key_widget = QtWidgets.QLabel(m.no_key)
         self.no_key_widget.setAlignment(QtCore.Qt.AlignCenter)
         self.addWidget(self.no_key_widget)
         self.addWidget(self.codes_widget)
@@ -153,29 +153,29 @@ class YubiOathApplication(qt.Application):
 
     def _build_menu_bar(self):
         file_menu = self.window.menuBar().addMenu(m.menu_file)
-        self._add_action = QtGui.QAction(m.action_add, file_menu)
+        self._add_action = QtWidgets.QAction(m.action_add, file_menu)
         self._add_action.triggered.connect(self._add_credential)
         file_menu.addAction(self._add_action)
-        self._password_action = QtGui.QAction(m.action_password, file_menu)
+        self._password_action = QtWidgets.QAction(m.action_password, file_menu)
         self._password_action.triggered.connect(self._change_password)
         self._password_action.setEnabled(False)
         file_menu.addAction(self._password_action)
-        settings_action = QtGui.QAction(m.action_settings, file_menu)
+        settings_action = QtWidgets.QAction(m.action_settings, file_menu)
         settings_action.triggered.connect(self._show_settings)
         file_menu.addAction(settings_action)
         file_menu.addSeparator()
-        quit_action = QtGui.QAction(m.action_quit, file_menu)
+        quit_action = QtWidgets.QAction(m.action_quit, file_menu)
         quit_action.triggered.connect(self._systray.quit)
         file_menu.addAction(quit_action)
 
         if sys.platform == "darwin":
-            close_action = QtGui.QAction(m.action_close, file_menu)
-            close_action.setShortcut(QtGui.QKeySequence.Close)
+            close_action = QtWidgets.QAction(m.action_close, file_menu)
+            close_action.setShortcut(QtWidgets.QKeySequence.Close)
             close_action.triggered.connect(self.window.hide)
             file_menu.addAction(close_action)
 
         help_menu = self.window.menuBar().addMenu(m.menu_help)
-        about_action = QtGui.QAction(m.action_about, help_menu)
+        about_action = QtWidgets.QAction(m.action_about, help_menu)
         about_action.triggered.connect(self._about)
         help_menu.addAction(about_action)
 
@@ -215,7 +215,7 @@ class YubiOathApplication(qt.Application):
         return 'ykpers: %s' % ykpers_version
 
     def _about(self):
-        QtGui.QMessageBox.about(
+        QtWidgets.QMessageBox.about(
             self.window,
             m.about_1 % m.app_name,
             ABOUT_TEXT % (self.version, self._libversions()))
@@ -230,7 +230,7 @@ class YubiOathApplication(qt.Application):
                 parent=self.window)
             if dialog.exec_():
                 if not self._controller._reader:
-                    QtGui.QMessageBox.critical(
+                    QtWidgets.QMessageBox.critical(
                         self.window, m.key_removed, m.key_removed_desc)
                 else:
                     try:
@@ -242,7 +242,7 @@ class YubiOathApplication(qt.Application):
                             algo=dialog.algorithm,
                             require_touch=dialog.require_touch)
                     except NoSpaceError:
-                        QtGui.QMessageBox.critical(
+                        QtWidgets.QMessageBox.critical(
                             self.window, m.no_space, m.no_space_desc)
         elif c.otp:
             dialog = AddCredLegacyDialog(
@@ -254,13 +254,13 @@ class YubiOathApplication(qt.Application):
                 self._settings[key] = dialog.n_digits
                 self._controller.refresh_codes()
         else:
-            QtGui.QMessageBox.critical(self.window, 'No key', 'No key')
+            QtWidgets.QMessageBox.critical(self.window, 'No key', 'No key')
 
     def _change_password(self):
         dialog = SetPasswordDialog(self.window)
         if dialog.exec_():
             if not self._controller._reader:
-                QtGui.QMessageBox.critical(
+                QtWidgets.QMessageBox.critical(
                     self.window, m.key_removed, m.key_removed_desc)
             else:
                 self._controller.set_password(dialog.password, dialog.remember)

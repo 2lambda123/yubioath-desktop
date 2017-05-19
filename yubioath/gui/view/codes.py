@@ -24,7 +24,7 @@
 # non-source form of such a combination shall include the source code
 # for the parts of OpenSSL used as well as that of the covered work.
 
-from PySide import QtGui, QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 from .. import messages as m
 from ...core.standard import TYPE_HOTP
 from yubioath.yubicommon.qt.utils import connect_once
@@ -43,8 +43,8 @@ QProgressBar::chunk {
 """
 
 
-class TimeleftBar(QtGui.QProgressBar):
-    expired = QtCore.Signal()
+class TimeleftBar(QtWidgets.QProgressBar):
+    expired = QtCore.pyqtSignal()
 
     def __init__(self):
         super(TimeleftBar, self).__init__()
@@ -74,32 +74,32 @@ class TimeleftBar(QtGui.QProgressBar):
             self.expired.emit()
 
 
-class SearchBox(QtGui.QWidget):
+class SearchBox(QtWidgets.QWidget):
 
     def __init__(self, codes):
         super(SearchBox, self).__init__()
 
         self._codeswidget = codes
 
-        layout = QtGui.QHBoxLayout(self)
+        layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self._model = QtGui.QStringListModel()
-        self._completer = QtGui.QCompleter()
+        self._model = QtCore.QStringListModel()
+        self._completer = QtWidgets.QCompleter()
         self._completer.setModel(self._model)
-        self._completer.setCompletionMode(QtGui.QCompleter.InlineCompletion)
+        self._completer.setCompletionMode(QtWidgets.QCompleter.InlineCompletion)
         self._completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
 
-        self._lineedit = QtGui.QLineEdit()
+        self._lineedit = QtWidgets.QLineEdit()
         self._lineedit.setPlaceholderText(m.search)
         self._lineedit.setCompleter(self._completer)
         self._lineedit.textChanged.connect(self._text_changed)
         layout.addWidget(self._lineedit)
 
-        self._shortcut_focus = QtGui.QShortcut(
+        self._shortcut_focus = QtWidgets.QShortcut(
             QtGui.QKeySequence.Find,
             self._lineedit, self._set_focus)
-        self._shortcut_clear = QtGui.QShortcut(
+        self._shortcut_clear = QtWidgets.QShortcut(
             QtGui.QKeySequence(self.tr("Esc")),
             self._lineedit, self._lineedit.clear)
 
@@ -124,7 +124,7 @@ class SearchBox(QtGui.QWidget):
         self._model.setStringList(strings)
 
 
-class CodeMenu(QtGui.QMenu):
+class CodeMenu(QtWidgets.QMenu):
 
     def __init__(self, parent):
         super(CodeMenu, self).__init__(parent)
@@ -133,15 +133,15 @@ class CodeMenu(QtGui.QMenu):
         self.addAction(m.action_delete).triggered.connect(self._delete)
 
     def _delete(self):
-        res = QtGui.QMessageBox.warning(self, m.delete_title,
+        res = QtWidgets.QMessageBox.warning(self, m.delete_title,
                                         m.delete_desc_1 % self.entry.cred.name,
-                                        QtGui.QMessageBox.Ok,
-                                        QtGui.QMessageBox.Cancel)
-        if res == QtGui.QMessageBox.Ok:
+                                        QtWidgets.QMessageBox.Ok,
+                                        QtWidgets.QMessageBox.Cancel)
+        if res == QtWidgets.QMessageBox.Ok:
             self.entry.delete()
 
 
-class Code(QtGui.QWidget):
+class Code(QtWidgets.QWidget):
 
     def __init__(self, entry, timer, on_change):
         super(Code, self).__init__()
@@ -156,28 +156,28 @@ class Code(QtGui.QWidget):
         self._build_ui()
 
     def _build_ui(self):
-        layout = QtGui.QHBoxLayout(self)
-        labels = QtGui.QVBoxLayout()
+        layout = QtWidgets.QHBoxLayout(self)
+        labels = QtWidgets.QVBoxLayout()
 
         if self.issuer:
-            self._issuer_lbl = QtGui.QLabel(self.issuer)
+            self._issuer_lbl = QtWidgets.QLabel(self.issuer)
             labels.addWidget(self._issuer_lbl)
 
-        self._code_lbl = QtGui.QLabel()
+        self._code_lbl = QtWidgets.QLabel()
         labels.addWidget(self._code_lbl)
 
-        self._name_lbl = QtGui.QLabel(self.name)
+        self._name_lbl = QtWidgets.QLabel(self.name)
         labels.addWidget(self._name_lbl)
 
         layout.addLayout(labels)
         layout.addStretch()
 
-        self._calc_btn = QtGui.QPushButton(QtGui.QIcon(':/calc.png'), None)
+        self._calc_btn = QtWidgets.QPushButton(QtGui.QIcon(':/calc.png'), None)
         self._calc_btn.clicked.connect(self._calc)
         layout.addWidget(self._calc_btn)
         self._calc_btn.setVisible(self.entry.manual)
 
-        self._copy_btn = QtGui.QPushButton(QtGui.QIcon(':/copy.png'), None)
+        self._copy_btn = QtWidgets.QPushButton(QtGui.QIcon(':/copy.png'), None)
         self._copy_btn.clicked.connect(self._copy)
         layout.addWidget(self._copy_btn)
 
@@ -238,7 +238,7 @@ class Code(QtGui.QWidget):
         event.accept()
 
 
-class CodesList(QtGui.QWidget):
+class CodesList(QtWidgets.QWidget):
 
     def __init__(
             self, timer, credentials=[], on_change=None, search_filter=None):
@@ -246,7 +246,7 @@ class CodesList(QtGui.QWidget):
 
         self._codes = []
 
-        layout = QtGui.QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
@@ -257,13 +257,13 @@ class CodesList(QtGui.QWidget):
             code = Code(cred, timer, on_change)
             layout.addWidget(code)
             self._codes.append(code)
-            line = QtGui.QFrame()
-            line.setFrameShape(QtGui.QFrame.HLine)
-            line.setFrameShadow(QtGui.QFrame.Sunken)
+            line = QtWidgets.QFrame()
+            line.setFrameShape(QtWidgets.QFrame.HLine)
+            line.setFrameShadow(QtWidgets.QFrame.Sunken)
             layout.addWidget(line)
 
         if not credentials:
-            no_creds = QtGui.QLabel(m.no_creds)
+            no_creds = QtWidgets.QLabel(m.no_creds)
             no_creds.setAlignment(QtCore.Qt.AlignCenter)
             layout.addStretch()
             layout.addWidget(no_creds)
@@ -277,7 +277,7 @@ class CodesList(QtGui.QWidget):
             del code
 
 
-class CodesWidget(QtGui.QWidget):
+class CodesWidget(QtWidgets.QWidget):
 
     def __init__(self, controller):
         super(CodesWidget, self).__init__()
@@ -293,18 +293,18 @@ class CodesWidget(QtGui.QWidget):
         self.refresh_timer()
 
     def _build_ui(self):
-        layout = QtGui.QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self)
 
         self._timeleft = TimeleftBar()
         layout.addWidget(self._timeleft)
 
-        self._scroll_area = QtGui.QScrollArea()
+        self._scroll_area = QtWidgets.QScrollArea()
         self._scroll_area.setWidgetResizable(True)
         self._scroll_area.setHorizontalScrollBarPolicy(
             QtCore.Qt.ScrollBarAlwaysOff)
         self._scroll_area.setVerticalScrollBarPolicy(
             QtCore.Qt.ScrollBarAsNeeded)
-        self._scroll_area.setWidget(QtGui.QWidget())
+        self._scroll_area.setWidget(QtWidgets.QWidget())
         layout.addWidget(self._scroll_area)
 
         self._searchbox = SearchBox(self)

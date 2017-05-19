@@ -39,7 +39,7 @@ line tool, or just the python library. You do so as follows:
   $ pip install yubioath-desktop  # This installs only the library.
 
 If you run into problems during installation it will likely be with one of the
-dependencies, such as PySide or pyscard. Please see the relevant documentation
+dependencies, such as PyQt5 or pyscard. Please see the relevant documentation
 for installing each project, provided by those projects.
 
 You will also need libykpers, which is a C library used to manage credentials
@@ -70,7 +70,7 @@ NOTE: You may have to reboot your computer for the change to the libccid
 configuration to take effect!
 
 === Dependencies
-Yubico Authenticator requires click, PySide, yubikey-personalization, pyscard,
+Yubico Authenticator requires click, PyQt5, yubikey-personalization, pyscard,
 and PyCrypto.
 
 === Working with the source code repository

@@ -285,10 +285,10 @@ def gui(ctx, help):
     Launches the Yubico Authenticator graphical interface.
     """
     try:
-        import PySide
-        assert PySide
+        import PyQt5
+        assert PyQt5
     except ImportError:
-        ctx.fail('GUI requires PySide to run.')
+        ctx.fail('GUI requires PyQt5 to run.')
     import yubioath.gui.__main__
     sys.argv.remove(ctx.command.name)
     sys.argv[0] = sys.argv[0] + ' ' + ctx.command.name

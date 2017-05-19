@@ -26,7 +26,7 @@
 
 from yubioath.yubicommon import qt
 from .. import messages as m
-from PySide import QtGui
+from PyQt5 import QtWidgets
 
 INDENT = 16
 
@@ -43,14 +43,14 @@ class SettingsDialog(qt.Dialog):
         self._reset()
 
     def _build_ui(self):
-        layout = QtGui.QFormLayout(self)
+        layout = QtWidgets.QFormLayout(self)
         layout.addRow(self.section(m.ykstd_slots))
 
         # YubiKey slot 1
-        self._slot1_enabled = QtGui.QCheckBox(m.enable_slot_1 % 1)
+        self._slot1_enabled = QtWidgets.QCheckBox(m.enable_slot_1 % 1)
         self._slot1_enabled.setToolTip(m.tt_slot_enabled_1 % 1)
         layout.addRow(self._slot1_enabled)
-        self._slot1_digits = QtGui.QComboBox()
+        self._slot1_digits = QtWidgets.QComboBox()
         self._slot1_digits.addItems(['6', '8'])
         self._slot1_enabled.stateChanged.connect(self._slot1_digits.setEnabled)
         self._slot1_digits.setEnabled(False)
@@ -59,10 +59,10 @@ class SettingsDialog(qt.Dialog):
         layout.labelForField(self._slot1_digits).setIndent(INDENT)
 
         # YubiKey slot 2
-        self._slot2_enabled = QtGui.QCheckBox(m.enable_slot_1 % 2)
+        self._slot2_enabled = QtWidgets.QCheckBox(m.enable_slot_1 % 2)
         self._slot2_enabled.setToolTip(m.tt_slot_enabled_1 % 2)
         layout.addRow(self._slot2_enabled)
-        self._slot2_digits = QtGui.QComboBox()
+        self._slot2_digits = QtWidgets.QComboBox()
         self._slot2_digits.addItems(['6', '8'])
         self._slot2_enabled.stateChanged.connect(self._slot2_digits.setEnabled)
         self._slot2_digits.setEnabled(False)
@@ -73,22 +73,22 @@ class SettingsDialog(qt.Dialog):
         layout.addRow(self.section(m.advanced))
 
         # Systray
-        self._systray = QtGui.QCheckBox(m.enable_systray)
+        self._systray = QtWidgets.QCheckBox(m.enable_systray)
         self._systray.setToolTip(m.tt_systray)
         layout.addRow(self._systray)
 
         # Kill scdaemon
-        self._kill_scdaemon = QtGui.QCheckBox(m.kill_scdaemon)
+        self._kill_scdaemon = QtWidgets.QCheckBox(m.kill_scdaemon)
         self._kill_scdaemon.setToolTip(m.tt_kill_scdaemon)
         layout.addRow(self._kill_scdaemon)
 
         # Reader name
-        self._reader_name = QtGui.QLineEdit()
+        self._reader_name = QtWidgets.QLineEdit()
         self._reader_name.setToolTip(m.tt_reader_name)
         layout.addRow(m.reader_name, self._reader_name)
 
-        btns = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok |
-                                      QtGui.QDialogButtonBox.Cancel)
+        btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok |
+                                      QtWidgets.QDialogButtonBox.Cancel)
         btns.accepted.connect(self.accept)
         btns.rejected.connect(self.reject)
         layout.addRow(btns)
