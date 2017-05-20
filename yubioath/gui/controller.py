@@ -345,7 +345,7 @@ class GuiController(QtCore.QObject, Controller):
     def read_slot_otp(self, cred, timestamp=None, use_touch=False):
         return super(GuiController, self).read_slot_otp(cred, timestamp, False)
 
-    def _refresh_codes_locked(self, timestamp=None, std=None):
+    def _refresh_codes_worker(self, timestamp=None, std=None):
         with self._lock:
             if not std:
                 device = self.watcher.open()
@@ -366,7 +366,7 @@ class GuiController(QtCore.QObject, Controller):
         elif is_minimized(self._app.window):
             self._needs_read = True
             return
-        self._app.worker.post_bg((self._refresh_codes_locked, timestamp, std))
+        self._app.worker.post_bg((self._refresh_codes_worker, timestamp, std))
 
     def timerEvent(self, event):
         if not is_minimized(self._app.window):
