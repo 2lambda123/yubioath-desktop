@@ -163,6 +163,7 @@ class Timer(QtCore.QObject):
 
 class GuiController(QtCore.QObject, Controller):
     refreshed = QtCore.pyqtSignal()
+    changed = QtCore.pyqtSignal()
     ccid_disabled = QtCore.pyqtSignal()
 
     def __init__(self, app, settings):
@@ -262,7 +263,7 @@ class GuiController(QtCore.QObject, Controller):
         else:
             self._reader = None
             self._creds = None
-            self.refreshed.emit()
+            self.changed.emit()
 
     def _init_std(self, std):
         with self._lock:
@@ -304,12 +305,12 @@ class GuiController(QtCore.QObject, Controller):
                         entry.code = code
                     elif cred.oath_type != entry_map[cred.name].cred.oath_type:
                         break
-                else:
-                    return
+                self.refreshed.emit()
+                return
             elif self._reader and self._needs_read and self._creds:
                 return
         self._creds = creds
-        self.refreshed.emit()
+        self.changed.emit()
 
     def _calculate_cred(self, cred):
         with self._lock:

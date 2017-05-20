@@ -70,7 +70,7 @@ class MainWidget(QtWidgets.QStackedWidget):
         self._controller = controller
 
         self._build_ui()
-        controller.refreshed.connect(self._refresh)
+        controller.changed.connect(self._refresh)
         controller.ccid_disabled.connect(self.ccid_disabled)
         controller.watcher.status_changed.connect(self._set_status)
 
@@ -179,7 +179,7 @@ class YubiOathApplication(qt.Application):
         about_action.triggered.connect(self._about)
         help_menu.addAction(about_action)
 
-        self._controller.refreshed.connect(self._refresh_menu)
+        self._controller.changed.connect(self._refresh_menu)
 
     def _refresh_menu(self):
         enabled = bool(self._controller._reader)

@@ -152,11 +152,10 @@ class CodeMenu(QtWidgets.QMenu):
 
 class Code(QtWidgets.QWidget):
 
-    def __init__(self, entry, timer, on_change):
+    def __init__(self, entry, timer):
         super(Code, self).__init__()
         self.entry = entry
         self.issuer, self.name = self._split_issuer_name()
-        self._on_change = on_change
         self.entry.changed.connect(self._draw)
         self.timer = timer
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -209,7 +208,6 @@ class Code(QtWidgets.QWidget):
             self._calc_btn.setEnabled(self.expired)
         self._code_lbl.setText(name_fmt % (code.code))
         self._copy_btn.setEnabled(bool(code.code))
-        self._on_change()
 
     def _copy(self):
         QtCore.QCoreApplication.instance().clipboard().setText(
@@ -249,8 +247,7 @@ class Code(QtWidgets.QWidget):
 
 class CodesList(QtWidgets.QWidget):
 
-    def __init__(
-            self, timer, credentials=[], on_change=None, search_filter=None):
+    def __init__(self, timer, credentials=[], search_filter=None):
         super(CodesList, self).__init__()
 
         self._codes = []
@@ -263,7 +260,7 @@ class CodesList(QtWidgets.QWidget):
             if search_filter is not None and \
                search_filter.lower() not in cred.cred.name.lower():
                 continue
-            code = Code(cred, timer, on_change)
+            code = Code(cred, timer)
             layout.addWidget(code)
             self._codes.append(code)
             line = QtWidgets.QFrame()
@@ -292,13 +289,13 @@ class CodesWidget(QtWidgets.QWidget):
         super(CodesWidget, self).__init__()
 
         self._controller = controller
-        controller.refreshed.connect(self.refresh)
+        controller.changed.connect(self.changed)
+        controller.refreshed.connect(self.refresh_timer)
 
         self._filter = None
 
         self._build_ui()
-        self.refresh()
-        self.refresh_timer()
+        self.changed()
 
     def _build_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
@@ -327,7 +324,6 @@ class CodesWidget(QtWidgets.QWidget):
         else:
             self._timeleft.set_target(0)
 
-
     def rebuild_completions(self):
         creds = self._controller.credentials
         stringlist = set()
@@ -342,9 +338,9 @@ class CodesWidget(QtWidgets.QWidget):
         if len(search_filter) < 1:
             search_filter = None
         self._filter = search_filter
-        self.refresh()
+        self.changed()
 
-    def refresh(self):
+    def changed(self):
         self._scroll_area.takeWidget().deleteLater()
         creds = self._controller.credentials
         self.rebuild_completions()
@@ -352,8 +348,8 @@ class CodesWidget(QtWidgets.QWidget):
             CodesList(
                 self._controller.timer,
                 creds or [],
-                self.refresh_timer,
                 self._filter))
         w = self._scroll_area.widget().minimumSizeHint().width()
         w += self._scroll_area.verticalScrollBar().width()
         self._scroll_area.setMinimumWidth(w)
+        self.refresh_timer()
