@@ -291,11 +291,12 @@ class YubiOathCcid(object):
                     not in os.environ:
                     pass  # Ignore hidden credentials.
             elif tag == TAG_T_RESPONSE:
-                # Steam credentials need to be recalculated
-                # to skip full truncation done by Yubikey 4.
-                code = self.calculate(name, TYPE_TOTP) \
-                        if name.startswith('Steam:') \
-                        else format_truncated(value, SCHEME_STANDARD)
+                if name.startswith('Steam:'):
+                    # Steam credentials need to be recalculated
+                    # to skip full truncation done by Yubikey 4.
+                    code = self.calculate(name, TYPE_TOTP)
+                else:
+                    code = format_truncated(value, SCHEME_STANDARD)
                 results.append((
                     Credential(self, TYPE_TOTP, name, False),
                     code
