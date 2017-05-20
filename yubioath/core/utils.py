@@ -224,8 +224,9 @@ def _get_pids_win():
                                       'Win32_USBControllerDevice', 'get', '*'],
                                      startupinfo=startupinfo)
     for line in output.splitlines():
+        line = line.decode('ascii')
         if 'VID_1050' in line:
-            match = pid_pattern.search(line.decode('ascii'))
+            match = pid_pattern.search(line)
             if match:
                 pids.append(int(match.group(1), 16))
     return pids
