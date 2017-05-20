@@ -70,8 +70,7 @@ Section "Yubico Authenticator"
   SectionIn RO
   SetOutPath $INSTDIR
   File "..\dist\Yubico Authenticator\*"
-  File /r "..\dist\Yubico Authenticator\tcl"
-  File /r "..\dist\Yubico Authenticator\tk"
+  File /r "..\dist\Yubico Authenticator\qt5_plugins"
 SectionEnd
 
 Var MYTMP
