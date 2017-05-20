@@ -186,6 +186,7 @@ class CardWatcher(QtCore.QObject):
 
     def __del__(self):
         self._thread.running = False
+        self._thread.wake()
         self._thread.join()
 
 
