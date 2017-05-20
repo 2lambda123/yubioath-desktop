@@ -27,7 +27,7 @@
 from ..core.standard import (YubiOathCcid, TYPE_HOTP)
 from ..core.controller import Controller
 from ..core.exc import CardError, DeviceLockedError
-from .ccid import CardStatus
+from .ccid import CardStatus, observe_reader
 from yubioath.yubicommon.qt.utils import is_minimized
 from .view.get_password import GetPasswordDialog
 from .keystore import get_keystore
@@ -40,10 +40,6 @@ from collections import namedtuple
 from threading import RLock
 
 import sys
-if True or sys.platform == 'win32':  # Windows has issues with the high level API.
-    from .ccid_poll import observe_reader
-else:
-    from .ccid import observe_reader
 
 
 Code = namedtuple('Code', 'code timestamp ttl')

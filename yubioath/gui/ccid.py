@@ -24,87 +24,98 @@
 # non-source form of such a combination shall include the source code
 # for the parts of OpenSSL used as well as that of the covered work.
 
-import time
-
-from ..core.ccid import ScardDevice
-from smartcard import System
-from smartcard.ReaderMonitoring import ReaderMonitor, ReaderObserver
-from smartcard.CardMonitoring import CardMonitor, CardObserver
-from smartcard.Exceptions import SmartcardException
-from smartcard.pcsc.PCSCExceptions import EstablishContextException
+from yubioath.yubicommon.compat import byte2int, int2byte
+from smartcard.scard import (
+    SCardTransmit, SCardGetErrorMessage, SCardConnect, SCardDisconnect,
+    SCardEstablishContext, SCardReleaseContext, SCardListReaders,
+    SCARD_S_SUCCESS, SCARD_UNPOWER_CARD, SCARD_SCOPE_USER, SCARD_SHARE_SHARED,
+    SCARD_PROTOCOL_T0, SCARD_PROTOCOL_T1
+)
 from PyQt5 import QtCore
-import weakref
+import threading
 
 
-class _CcidReaderObserver(ReaderObserver):
+class LLScardDevice(object):
 
-    def __init__(self, controller):
-        self._controller = weakref.ref(controller)
-        self._monitor = ReaderMonitor(startOnDemand=False, period=1)
-        self._monitor.addObserver(self)
+    """
+    Low level pyscard based backend (Windows chokes on the high level one
+    whenever you remove the key and re-insert it).
+    """
 
-    def update(self, observable, tup):
-        (added, removed) = tup
-        c = self._controller()
-        if c:
-            c._update(added, removed)
+    def __init__(self, context, card, protocol):
+        self._context = context
+        self._card = card
+        self._protocol = protocol
 
-    def delete(self):
-        self._monitor.deleteObservers()
+    def send_apdu(self, cl, ins, p1, p2, data):
+        apdu = [cl, ins, p1, p2, len(data)] + [byte2int(b) for b in data]
+        hresult, response = SCardTransmit(self._card, self._protocol, apdu)
+        if hresult != SCARD_S_SUCCESS:
+            raise Exception('Failed to transmit: ' +
+                            SCardGetErrorMessage(hresult))
+        status = response[-2] << 8 | response[-1]
+        return b''.join(int2byte(i) for i in response[:-2]), status
+
+    def __del__(self):
+        self.close()
+
+    def close(self):
+        SCardDisconnect(self._card, SCARD_UNPOWER_CARD)
+        SCardReleaseContext(self._context)
+
+
+class PollerThread(threading.Thread):
+
+    def __init__(self, watcher):
+        super(PollerThread, self).__init__()
+        self._watcher = watcher
+        self.daemon = True
+        self.running = True
+        self.event = threading.Event()
+        self.poll_interval = 0.5
+
+    def run(self):
+        old_readers = []
+        while self.running:
+            readers = self._list()
+            added = [r for r in readers if r not in old_readers]
+            removed = [r for r in old_readers if r not in readers]
+            if added or removed:
+                self._watcher._update(added, removed)
+            old_readers = readers
+            self.event.wait(self.poll_interval)
+            self.event.clear()
+
+    def wake(self):
+        self.event.set()
 
     def set_poll_interval(self, interval):
-        success = False
-        attempts = 0
-        sleeptime = 0.01
-        while attempts < 5:
+        self.poll_interval = interval
+        self.wake()
+
+    def _list(self):
+        try:
+            hresult, hcontext = SCardEstablishContext(SCARD_SCOPE_USER)
+            if hresult != SCARD_S_SUCCESS:
+                raise Exception('Failed to establish context : ' +
+                                SCardGetErrorMessage(hresult))
+
             try:
-                self._monitor.rmthread.period = interval
-                success = True
-                break
-            except:
-                time.sleep(sleeptime)
-                sleeptime = 0.1
-            attempts += 1
-        return success
-
-
-class _CcidCardObserver(CardObserver):
-
-    def __init__(self, controller):
-        self._controller = weakref.ref(controller)
-        self._monitor = CardMonitor()
-        self._monitor.addObserver(self)
-
-    def update(self, observable, tup):
-        (added, removed) = tup
-        c = self._controller()
-        if c:
-            c._update([card.reader for card in added],
-                      [r.reader for r in removed])
-
-    def delete(self):
-        self._monitor.deleteObservers()
-
-    def set_poll_interval(self, interval):
-        # pyscard doesn't make the polling interval configurable :(
-        success = False
-        attempts = 0
-        sleeptime = 0.01
-        while attempts < 5:
-            try:
-                self._monitor.rmthread.cardrequest.pcsccardrequest.pollinginterval = interval
-                success = True
-                break
-            except:
-                time.sleep(sleeptime)
-                sleeptime = 0.1
-            attempts += 1
-        return success
-
+                hresult, readers = SCardListReaders(hcontext, [])
+                if hresult != SCARD_S_SUCCESS:
+                    raise Exception('Failed to list readers: ' +
+                                    SCardGetErrorMessage(hresult))
+                return readers
+            finally:
+                hresult = SCardReleaseContext(hcontext)
+                if hresult != SCARD_S_SUCCESS:
+                    raise Exception('Failed to release context: ' +
+                                    SCardGetErrorMessage(hresult))
+        except:
+            return []
 
 class CardStatus:
     NoCard, InUse, Present = range(3)
-
 
 class CardWatcher(QtCore.QObject):
     status_changed = QtCore.pyqtSignal(int)
@@ -113,17 +124,11 @@ class CardWatcher(QtCore.QObject):
         super(CardWatcher, self).__init__(parent)
 
         self._status = CardStatus.NoCard
-        self._device = lambda: None
         self.reader_name = reader_name
         self._callback = callback or (lambda _: _)
         self._reader = None
-        self._reader_observer = _CcidReaderObserver(self)
-        self._card_observer = _CcidCardObserver(self)
-        try:
-            self._update(System.readers(), [])
-        except EstablishContextException:
-            pass  # No PC/SC context!
-        self.active()
+        self._thread = PollerThread(self)
+        self._thread.start()
 
     def _update(self, added, removed):
         if self._reader in removed:  # Device removed
@@ -132,7 +137,7 @@ class CardWatcher(QtCore.QObject):
 
         if self._reader is None:
             for reader in added:
-                if self.reader_name in reader.name:
+                if self.reader_name in reader:
                     self.reader = reader
                     self._set_status(CardStatus.Present)
                     return
@@ -156,32 +161,32 @@ class CardWatcher(QtCore.QObject):
         self._callback(self, value)
 
     def open(self):
-        dev = self._device()
-        if dev is not None:
-            return dev
-
         if self._reader:
-            conn = self._reader.createConnection()
             try:
-                conn.connect()
-                self._set_status(CardStatus.Present)
-                dev = ScardDevice(conn)
-                self._device = weakref.ref(dev)
-                return dev
-            except SmartcardException:
+                hresult, hcontext = SCardEstablishContext(SCARD_SCOPE_USER)
+                if hresult != SCARD_S_SUCCESS:
+                    raise Exception('Failed to establish context : ' +
+                                    SCardGetErrorMessage(hresult))
+
+                hresult, hcard, dwActiveProtocol = SCardConnect(
+                    hcontext, self._reader,
+                    SCARD_SHARE_SHARED, SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1)
+                if hresult != SCARD_S_SUCCESS:
+                    raise Exception('Unable to connect: ' +
+                                    SCardGetErrorMessage(hresult))
+                return LLScardDevice(hcontext, hcard, dwActiveProtocol)
+            except Exception:
                 self._set_status(CardStatus.InUse)
 
     def passive(self):
-        self._reader_observer.set_poll_interval(5)
-        self._card_observer.set_poll_interval(5)
+        self._thread.set_poll_interval(10)
 
     def active(self):
-        self._reader_observer.set_poll_interval(1)
-        self._card_observer.set_poll_interval(0.25)
+        self._thread.set_poll_interval(0.5)
 
     def __del__(self):
-        self._reader_observer.delete()
-        self._card_observer.delete()
+        self._thread.running = False
+        self._thread.join()
 
 
 def observe_reader(reader_name='Yubikey', callback=None):
