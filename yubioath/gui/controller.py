@@ -33,10 +33,11 @@ from .view.get_password import GetPasswordDialog
 from .keystore import get_keystore
 from . import messages as m
 from yubioath.core.utils import ccid_supported_but_disabled
-from yubioath.yubicommon.qt import get_active_window, MutexLocker
+from yubioath.yubicommon.qt import get_active_window
 from PyQt5 import QtCore, QtGui
 from time import time
 from collections import namedtuple
+from threading import RLock
 
 import sys
 if True or sys.platform == 'win32':  # Windows has issues with the high level API.
@@ -175,7 +176,7 @@ class GuiController(QtCore.QObject, Controller):
         self._needs_read = False
         self._reader = None
         self._creds = None
-        self._lock = QtCore.QMutex()
+        self._lock = RLock()
         self._keystore = get_keystore()
         self._current_device_has_ccid_disabled = False
         self.timer = Timer(TIME_PERIOD)
@@ -218,9 +219,6 @@ class GuiController(QtCore.QObject, Controller):
             std.unlock(key)
         return True
 
-    def grab_lock(self, lock=None, try_lock=False):
-        return lock or MutexLocker(self._lock, False).lock(try_lock)
-
     @property
     def otp_enabled(self):
         return self.otp_supported and bool(self.slot1 or self.slot2)
@@ -236,20 +234,20 @@ class GuiController(QtCore.QObject, Controller):
         return False
 
     def get_capabilities(self):
-        assert self.grab_lock()
-        ccid_dev = self.watcher.open()
-        if ccid_dev:
-            dev = YubiOathCcid(ccid_dev)
-            return Capabilities(True, None, dev.version)
-        legacy = self.open_otp()
-        if legacy:
-            return Capabilities(None, legacy.slot_status(), (0, 0, 0))
-        return Capabilities(None, None, (0, 0, 0))
+        with self._lock:
+            ccid_dev = self.watcher.open()
+            if ccid_dev:
+                dev = YubiOathCcid(ccid_dev)
+                return Capabilities(True, None, dev.version)
+            legacy = self.open_otp()
+            if legacy:
+                return Capabilities(None, legacy.slot_status(), (0, 0, 0))
+            return Capabilities(None, None, (0, 0, 0))
 
     def get_entry_names(self):
         return names(self._creds)
 
-    def _on_reader(self, watcher, reader, lock=None):
+    def _on_reader(self, watcher, reader):
         if reader:
             if self._reader is None:
                 self._reader = reader
@@ -271,21 +269,21 @@ class GuiController(QtCore.QObject, Controller):
             self.refreshed.emit()
 
     def _init_std(self, std):
-        lock = self.grab_lock()
-        while std.locked:
-            if self._keystore.get(std.id) is None:
-                dialog = GetPasswordDialog(get_active_window())
-                if dialog.exec_():
-                    self._keystore.put(std.id,
-                                       std.calculate_key(dialog.password),
-                                       dialog.remember)
-                else:
-                    return
-            try:
-                std.unlock(self._keystore.get(std.id))
-            except CardError:
-                self._keystore.delete(std.id)
-        self.refresh_codes(self.timer.time, lock, std)
+        with self._lock:
+            while std.locked:
+                if self._keystore.get(std.id) is None:
+                    dialog = GetPasswordDialog(get_active_window())
+                    if dialog.exec_():
+                        self._keystore.put(std.id,
+                                           std.calculate_key(dialog.password),
+                                           dialog.remember)
+                    else:
+                        return
+                try:
+                    std.unlock(self._keystore.get(std.id))
+                except CardError:
+                    self._keystore.delete(std.id)
+            self.refresh_codes(self.timer.time, std)
 
     def _await(self):
         self._creds = None
@@ -318,66 +316,63 @@ class GuiController(QtCore.QObject, Controller):
         self.refreshed.emit()
 
     def _calculate_cred(self, cred):
-        assert self.grab_lock()
-        now = time()
-        timestamp = self.timer.time
-        if timestamp + TIME_PERIOD - now < 10:
-            timestamp += TIME_PERIOD
-        ttl = TIME_PERIOD
-        if cred.oath_type == TYPE_HOTP:
-            ttl = INF
+        with self._lock:
+            now = time()
+            timestamp = self.timer.time
+            if timestamp + TIME_PERIOD - now < 10:
+                timestamp += TIME_PERIOD
+            ttl = TIME_PERIOD
+            if cred.oath_type == TYPE_HOTP:
+                ttl = INF
 
-        if cred.name in ['YubiKey slot 1', 'YubiKey slot 2']:
-            legacy = self.open_otp()
-            if not legacy:
-                raise ValueError('YubiKey removed!')
+            if cred.name in ['YubiKey slot 1', 'YubiKey slot 2']:
+                legacy = self.open_otp()
+                if not legacy:
+                    raise ValueError('YubiKey removed!')
 
-            try:
-                cred._legacy = legacy
-                cred, code = super(GuiController, self).read_slot_otp(
-                    cred, timestamp, True)
-            finally:
-                cred._legacy = None  # Release the handle.
-            return Code(code, timestamp, TIME_PERIOD)
+                try:
+                    cred._legacy = legacy
+                    cred, code = super(GuiController, self).read_slot_otp(
+                        cred, timestamp, True)
+                finally:
+                    cred._legacy = None  # Release the handle.
+                return Code(code, timestamp, TIME_PERIOD)
 
-        ccid_dev = self.watcher.open()
-        if not ccid_dev:
-            if self.watcher.status != CardStatus.Present:
-                self._set_creds(None)
-            return
-        dev = YubiOathCcid(ccid_dev)
-        if self.unlock(dev):
-            return Code(dev.calculate(cred.name, cred.oath_type, timestamp),
-                        timestamp, ttl)
+            ccid_dev = self.watcher.open()
+            if not ccid_dev:
+                if self.watcher.status != CardStatus.Present:
+                    self._set_creds(None)
+                return
+            dev = YubiOathCcid(ccid_dev)
+            if self.unlock(dev):
+                return Code(dev.calculate(cred.name, cred.oath_type, timestamp),
+                            timestamp, ttl)
 
     def read_slot_otp(self, cred, timestamp=None, use_touch=False):
         return super(GuiController, self).read_slot_otp(cred, timestamp, False)
 
-    def _refresh_codes_locked(self, timestamp=None, lock=None, std=None):
-        if not std:
-            device = self.watcher.open()
-        else:
-            device = std._device
-        self._needs_read = bool(self._reader and device is None)
-        timestamp = timestamp or self.timer.time
-        try:
-            creds = self.read_creds(device, self.slot1, self.slot2, timestamp,
-                                    False)
-        except DeviceLockedError:
-            creds = []
-        self._set_creds(creds)
+    def _refresh_codes_locked(self, timestamp=None, std=None):
+        with self._lock:
+            if not std:
+                device = self.watcher.open()
+            else:
+                device = std._device
+            self._needs_read = bool(self._reader and device is None)
+            timestamp = timestamp or self.timer.time
+            try:
+                creds = self.read_creds(device, self.slot1, self.slot2, timestamp,
+                                        False)
+            except DeviceLockedError:
+                creds = []
+            self._set_creds(creds)
 
-    def refresh_codes(self, timestamp=None, lock=None, std=None):
+    def refresh_codes(self, timestamp=None, std=None):
         if not self._reader and self.watcher.reader:
-            return self._on_reader(self.watcher, self.watcher.reader, lock)
+            return self._on_reader(self.watcher, self.watcher.reader)
         elif is_minimized(self._app.window):
             self._needs_read = True
             return
-        lock = self.grab_lock(lock, True)
-        if not lock:
-            return
-        self._app.worker.post_bg((self._refresh_codes_locked, timestamp, lock,
-                                  std))
+        self._app.worker.post_bg((self._refresh_codes_locked, timestamp, std))
 
     def timerEvent(self, event):
         if not is_minimized(self._app.window):
@@ -387,8 +382,7 @@ class GuiController(QtCore.QObject, Controller):
             elif self._reader is None:
                 if self.otp_enabled:
                     def refresh_otp():
-                        lock = self.grab_lock(try_lock=True)
-                        if lock:
+                        with self._lock:
                             read = self.read_creds(
                                 None, self.slot1, self.slot2, timestamp, False)
                             self._set_creds(read)
@@ -404,30 +398,30 @@ class GuiController(QtCore.QObject, Controller):
         event.accept()
 
     def add_cred(self, *args, **kwargs):
-        lock = self.grab_lock()
-        ccid_dev = self.watcher.open()
-        if ccid_dev:
-            dev = YubiOathCcid(ccid_dev)
-            if self.unlock(dev):
-                super(GuiController, self).add_cred(dev, *args, **kwargs)
-                self._creds = None
-                self.refresh_codes(lock=lock)
+        with self._lock:
+            ccid_dev = self.watcher.open()
+            if ccid_dev:
+                dev = YubiOathCcid(ccid_dev)
+                if self.unlock(dev):
+                    super(GuiController, self).add_cred(dev, *args, **kwargs)
+                    self._creds = None
+                    self.refresh_codes()
 
     def add_cred_legacy(self, *args, **kwargs):
-        lock = self.grab_lock()
-        super(GuiController, self).add_cred_legacy(*args, **kwargs)
-        self._creds = None
-        self.refresh_codes(lock=lock)
+        with self._lock:
+            super(GuiController, self).add_cred_legacy(*args, **kwargs)
+            self._creds = None
+            self.refresh_codes()
 
     def delete_cred(self, name):
-        lock = self.grab_lock()
-        ccid_dev = self.watcher.open()
-        if ccid_dev:
-            dev = YubiOathCcid(ccid_dev)
-            if self.unlock(dev):
-                super(GuiController, self).delete_cred(dev, name)
-                self._creds = None
-                self.refresh_codes(lock=lock)
+        with self._lock:
+            ccid_dev = self.watcher.open()
+            if ccid_dev:
+                dev = YubiOathCcid(ccid_dev)
+                if self.unlock(dev):
+                    super(GuiController, self).delete_cred(dev, name)
+                    self._creds = None
+                    self.refresh_codes(lock=lock)
 
     def delete_cred_legacy(self, *args, **kwargs):
         lock = self.grab_lock()
@@ -436,13 +430,13 @@ class GuiController(QtCore.QObject, Controller):
         self.refresh_codes(lock=lock)
 
     def set_password(self, password, remember=False):
-        assert self.grab_lock()
-        ccid_dev = self.watcher.open()
-        if ccid_dev:
-            dev = YubiOathCcid(ccid_dev)
-            if self.unlock(dev):
-                key = super(GuiController, self).set_password(dev, password)
-                self._keystore.put(dev.id, key, remember)
+        with self._lock:
+            ccid_dev = self.watcher.open()
+            if ccid_dev:
+                dev = YubiOathCcid(ccid_dev)
+                if self.unlock(dev):
+                    key = super(GuiController, self).set_password(dev, password)
+                    self._keystore.put(dev.id, key, remember)
 
     def start(self):
         self.watcher.active()
