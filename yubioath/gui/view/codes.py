@@ -44,8 +44,6 @@ QProgressBar::chunk {
 
 
 class TimeleftBar(QtWidgets.QProgressBar):
-    expired = QtCore.pyqtSignal()
-
     def __init__(self):
         super(TimeleftBar, self).__init__()
 
@@ -70,8 +68,6 @@ class TimeleftBar(QtWidgets.QProgressBar):
 
     def timerEvent(self, event):
         self.set_timeleft(max(0, self._timeleft - 250))
-        if self._timeleft == 0:
-            self.expired.emit()
 
 
 class SearchBox(QtWidgets.QWidget):
