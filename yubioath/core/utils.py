@@ -27,14 +27,15 @@
 from __future__ import print_function
 
 from yubioath.yubicommon.compat import int2byte, byte2int
-from Crypto.Hash import HMAC, SHA
-from Crypto.Protocol.KDF import PBKDF2
-from Crypto.Random import get_random_bytes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, hmac
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 try:
     from urlparse import urlparse, parse_qs
     from urllib import unquote
 except ImportError:
     from urllib.parse import unquote, urlparse, parse_qs
+import os
 import subprocess
 import struct
 import time
@@ -55,7 +56,13 @@ __all__ = [
 #
 
 def hmac_sha1(secret, message):
-    return HMAC.new(secret, message, digestmod=SHA).digest()
+    h = hmac.HMAC(secret, hashes.SHA1(), backend=default_backend())
+    h.update(message)
+    return h.finalize()
+
+
+def get_random_bytes(n):
+    return os.urandom(n)
 
 
 def time_challenge(t=None):
@@ -95,7 +102,13 @@ def parse_uri(uri):
 def derive_key(salt, passphrase):
     if not passphrase:
         return None
-    return PBKDF2(passphrase, salt, 16, 1000)
+    kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA1(),
+            length=16,
+            salt=salt,
+            iterations=1000,
+            backend=default_backend())
+    return kdf.derive(passphrase.encode('utf-8'))
 
 
 def der_pack(*values):
