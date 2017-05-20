@@ -156,6 +156,13 @@ class AddCredDialog(qt.Dialog):
                     m.qr_invalid_algo,
                     m.qr_invalid_algo_desc)
                 return
+            for needed in ['name', 'secret']:
+                if needed not in parsed:
+                    QtWidgets.QMessageBox.warning(
+                        self,
+                        m.qr_missing_key,
+                        m.qr_missing_key_desc % (needed,))
+                    return
 
             self._cred_name.setText(parsed['name'])
             self._cred_key.setText(parsed['secret'])
