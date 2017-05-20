@@ -203,14 +203,31 @@ def ccid_supported_but_disabled():
 
 
 def _get_pids_linux():
-    pid_pattern = re.compile(r' 1050:([0-9a-f]{4}) ')
-    pids = []
-    for line in subprocess.check_output('lsusb').splitlines():
-        match = pid_pattern.search(line.decode('ascii'))
-        if match:
-            pids.append(int(match.group(1), 16))
-    return pids
+    def is_usb_device(dirname):
+        if (not dirname[0].isdigit() and not dirname.startswith('usb')) or ':' in dirname:
+            return False
+        return True
 
+    def read_hex(path):
+        try:
+            return int(open(path, 'rt').read().strip(), 16)
+        except:
+            # Probably disappeared while iterating.
+            return None
+
+    pids = []
+
+    for path, dirnames, filenames in os.walk('/sys/bus/usb/devices'):
+        dirnames = filter(is_usb_device, dirnames)
+        for dirname in dirnames:
+            vid = read_hex(os.path.join(path, dirname, 'idVendor'))
+            if vid != 0x1050:
+                continue
+            pid = read_hex(os.path.join(path, dirname, 'idProduct'))
+            if pid is not None:
+                pids.append(pid)
+
+    return pids
 
 def _get_pids_osx():
     pids = []
