@@ -47,8 +47,25 @@ __all__ = [
     'derive_key',
     'der_pack',
     'der_read',
-    'get_random_bytes'
+    'get_random_bytes',
+    'timeit'
 ]
+
+
+def timeit(f):
+
+    def wrapper(*args, **kw):
+
+        ts = time.time()
+        result = f(*args, **kw)
+        te = time.time()
+
+        if te - ts > 0.01:
+            print("func:%r args:[%r, %r] took: %2.4f sec" %
+              (f.__name__, args, kw, te-ts))
+        return result
+
+    return wrapper
 
 
 #
