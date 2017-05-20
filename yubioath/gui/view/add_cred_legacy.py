@@ -106,8 +106,8 @@ class AddCredDialog(qt.Dialog):
         return None
 
     def _scan_qr(self):
-        winId = QtWidgets.QApplication.desktop().winId()
-        qimage = QtWidgets.QPixmap.grabWindow(winId).toImage()
+        screen = QtWidgets.QApplication.primaryScreen()
+        qimage = screen.grabWindow(0).toImage()
         self._worker.post(m.qr_scanning, (self._do_scan_qr, qimage),
                           self._handle_qr)
 
