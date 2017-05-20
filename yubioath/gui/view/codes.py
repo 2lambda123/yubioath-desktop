@@ -299,6 +299,7 @@ class CodesWidget(QtWidgets.QWidget):
         layout.addWidget(self._timeleft)
 
         self._scroll_area = QtWidgets.QScrollArea()
+        self._scroll_area.setFocusPolicy(QtCore.Qt.NoFocus)
         self._scroll_area.setWidgetResizable(True)
         self._scroll_area.setHorizontalScrollBarPolicy(
             QtCore.Qt.ScrollBarAlwaysOff)
