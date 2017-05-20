@@ -200,7 +200,8 @@ class Code(QtWidgets.QWidget):
             self._calc_btn.setEnabled(self.expired)
         self._code_lbl.setText(name_fmt % (code.code))
         self._copy_btn.setEnabled(bool(code.code))
-        self._on_change()
+        if self._on_change is not None:
+            self._on_change()
 
     def _copy(self):
         QtCore.QCoreApplication.instance().clipboard().setText(
@@ -290,7 +291,6 @@ class CodesWidget(QtWidgets.QWidget):
 
         self._build_ui()
         self.refresh()
-        self.refresh_timer()
 
     def _build_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
@@ -343,8 +343,9 @@ class CodesWidget(QtWidgets.QWidget):
             CodesList(
                 self._controller.timer,
                 creds or [],
-                self.refresh_timer,
+                None,
                 self._filter))
         w = self._scroll_area.widget().minimumSizeHint().width()
         w += self._scroll_area.verticalScrollBar().width()
         self._scroll_area.setMinimumWidth(w)
+        self.refresh_timer()

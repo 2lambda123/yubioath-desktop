@@ -304,8 +304,6 @@ class GuiController(QtCore.QObject, Controller):
                         entry.code = code
                     elif cred.oath_type != entry_map[cred.name].cred.oath_type:
                         break
-                else:
-                    return
             elif self._reader and self._needs_read and self._creds:
                 return
         self._creds = creds
