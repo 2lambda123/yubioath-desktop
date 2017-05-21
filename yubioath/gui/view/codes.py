@@ -54,20 +54,33 @@ class TimeleftBar(QtWidgets.QProgressBar):
         self.setValue(0)
         self.setTextVisible(False)
 
+        self._refresh_time = 250
         self._timer = 0
         self._timeleft = 0
+        self._target = 0
 
-    def set_timeleft(self, millis):
-        self._timeleft = max(0, millis)
-        self.setValue(min(millis, self.maximum()))
-        if self._timer == 0 and millis > 0:
-            self._timer = self.startTimer(250)
-        elif self._timer != 0 and millis <= 0:
+    def set_target(self, target):
+        self._target = target
+        self._update()
+
+    def _update(self):
+        self._timeleft = (self._target - time()) * 1000
+        self._timeleft = max(self._timeleft, 0)
+        if self._timeleft >= self.maximum() + 500:
+            # System clock jump? We should get a set_target() call to correct
+            # it as soon as the credentials get refreshed.
+            self._timeleft = 0
+        self._timeleft = min(self._timeleft, self.maximum())
+        self.setValue(self._timeleft)
+        if self._timer == 0 and self._timeleft > 0:
+            self._timer = self.startTimer(self._refresh_time)
+        elif self._timer != 0 and self._timeleft <= 0:
             self.killTimer(self._timer)
             self._timer = 0
 
     def timerEvent(self, event):
-        self.set_timeleft(max(0, self._timeleft - 250))
+        self._update()
+        event.accept()
 
 
 class SearchBox(QtWidgets.QWidget):
@@ -281,7 +294,6 @@ class CodesWidget(QtWidgets.QWidget):
 
         self._controller = controller
         controller.refreshed.connect(self.refresh)
-        controller.timer.time_changed.connect(self.refresh_timer)
 
         self._filter = None
 
@@ -311,9 +323,10 @@ class CodesWidget(QtWidgets.QWidget):
         if timestamp is None:
             timestamp = self._controller.timer.time
         if self._controller.has_expiring(timestamp):
-            self._timeleft.set_timeleft(1000 * (timestamp + 30 - time()))
+            self._timeleft.set_target(timestamp + 30)
         else:
-            self._timeleft.set_timeleft(0)
+            self._timeleft.set_target(0)
+
 
     def rebuild_completions(self):
         creds = self._controller.credentials
