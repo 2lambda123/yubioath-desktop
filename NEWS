@@ -1,6 +1,15 @@
 * Version 3.1.2
- ** Fix timer drift caused by internal timekeeping.
- ** Suspend timers when minimizing to the tray, and resume them when the window is opened again.
+ ** Replaced PySide with PyQt5
+ ** Replaced PyCrypto module with 'cryptography' module APIs
+ ** Replaced scdaemon-killer with 'psutil' module calls
+ ** Replaced CCID handling on Linux with lighter-weight version
+ ** Replaced a few subprocess calls with Pythonic APIs
+ ** Fixed an unlikely infinite loop in QR decoder
+ ** Fixed possible deadlocks in GUI controller
+ ** Fixed timer issues caused by internal relative timekeeping
+ ** Added more validation around QR code parameters
+ ** Timers are now suspended (or low-frequency) when the app does not have
+    focus. This should help with battery life.
 
 * Version 3.1.1 (never released by Yubico)
 
