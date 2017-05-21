@@ -46,7 +46,7 @@ setup(
     setup_requires=[],
     yc_requires=['ctypes', 'qt'],
     yc_requires_exclude=['PyQt5'],
-    install_requires=['pyscard', 'cryptography'],
+    install_requires=['pyscard', 'cryptography', 'psutil'],
     extras_require={
         'cli': ['click'],
         'gui': ['PyQt5']
