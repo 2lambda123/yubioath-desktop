@@ -123,6 +123,7 @@ class Timer(QtCore.QObject):
         self._enabled = True
         self._running = True
         self._timer_interval = 5000
+        self._last_emitted = 0
 
         self._calc_time()
         QtCore.QTimer.singleShot(self._wait_time, self._tick)
@@ -144,11 +145,11 @@ class Timer(QtCore.QObject):
             self._wait_time = rem + 50
 
     def _tick(self):
-        last = self._time
         self._calc_time()
         if self._enabled:
-            if self._time != last:
+            if self._time != self._last_emitted:
                 self.time_changed.emit(self._time)
+                self._last_emitted = self._time
         QtCore.QTimer.singleShot(self._wait_time, self._tick)
 
     def stop(self):
