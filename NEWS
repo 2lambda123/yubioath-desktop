@@ -1,4 +1,4 @@
-* Version 3.1.2
+* Version 3.1.2 (released 2017-05-20, by Steven Noonan <steven@uplinklabs.net>)
  ** Replaced PySide with PyQt5
  ** Replaced PyCrypto module with 'cryptography' module APIs
  ** Replaced scdaemon-killer with 'psutil' module calls
