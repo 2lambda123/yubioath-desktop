@@ -39,6 +39,7 @@ import os
 import subprocess
 import struct
 import time
+import psutil
 import sys
 import re
 
@@ -159,28 +160,9 @@ def b2len(bs):
 
 
 def kill_scdaemon():
-    try:
-        # Works for Windows.
-        from win32com.client import GetObject
-        from win32api import OpenProcess, CloseHandle, TerminateProcess
-        WMI = GetObject('winmgmts:')
-        ps = WMI.InstancesOf('Win32_Process')
-        for p in ps:
-            if p.Properties_('Name').Value == 'scdaemon.exe':
-                pid = p.Properties_('ProcessID').Value
-                print("Killing", pid)
-                handle = OpenProcess(1, False, pid)
-                TerminateProcess(handle, -1)
-                CloseHandle(handle)
-    except ImportError:
-        # Works for Linux and OS X.
-        pids = subprocess.check_output(
-            "ps ax | grep scdaemon | grep -v grep | awk '{ print $1 }'",
-            shell=True).strip()
-        if pids:
-            for pid in pids.split():
-                print("Killing", pid)
-                subprocess.call(['kill', '-9', pid])
+    for proc in psutil.process_iter():
+        if proc.name().lower() in [ 'scdaemon', 'scdaemon.exe' ]:
+            proc.kill()
 
 
 NON_CCID_YK_PIDS = set([0x0110, 0x0113, 0x0114, 0x0401, 0x0402, 0x0403])
