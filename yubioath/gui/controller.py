@@ -122,6 +122,7 @@ class Timer(QtCore.QObject):
         self._interval = interval
         self._enabled = True
         self._running = True
+        self._timer_interval = 5000
 
         self._calc_time()
         QtCore.QTimer.singleShot(self._wait_time, self._tick)
@@ -133,14 +134,14 @@ class Timer(QtCore.QObject):
         self._time = int(now - rem)
 
         # Now determine how long to wait until the next _tick()
-        rem = self._interval - rem
-        if rem > 5:
-            self._wait_time = 4500
+        rem = int((self._interval - rem) * 1000)
+        if rem > self._timer_interval + 100:
+            self._wait_time = self._timer_interval
         else:
             # Intentionally overshoot by minimal amount of time possible in
             # order to fire the time_changed signal immediately after the
             # deadline.
-            self._wait_time = int(rem * 1000) + 50
+            self._wait_time = rem + 50
 
     def _tick(self):
         last = self._time
