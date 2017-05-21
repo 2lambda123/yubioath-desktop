@@ -73,6 +73,7 @@ class MainWidget(QtWidgets.QStackedWidget):
         controller.refreshed.connect(self._refresh)
         controller.ccid_disabled.connect(self.ccid_disabled)
         controller.watcher.status_changed.connect(self._set_status)
+        self._set_status(controller.watcher.status)
 
     def ccid_disabled(self):
         if not self._controller.mute_ccid_disabled_warning:
