@@ -227,7 +227,10 @@ class YubiOathCcid(object):
         digits, resp = resp[0:1], resp[1:]
         offset = byte2int(resp[-1]) & 0xF
         resp = resp[offset:offset + 4]
-        scheme = SCHEME_STEAM if name.startswith('Steam:') else SCHEME_STANDARD
+        if name.startswith('Steam:'):
+            scheme = SCHEME_STEAM
+        else:
+            scheme = SCHEME_STANDARD
         return format_truncated(digits + resp, scheme)
 
     def calculate_key(self, passphrase):
