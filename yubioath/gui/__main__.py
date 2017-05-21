@@ -171,7 +171,7 @@ class YubiOathApplication(qt.Application):
 
         if sys.platform == "darwin":
             close_action = QtWidgets.QAction(m.action_close, file_menu)
-            close_action.setShortcut(QtWidgets.QKeySequence.Close)
+            close_action.setShortcut(QtGui.QKeySequence.Close)
             close_action.triggered.connect(self.window.hide)
             file_menu.addAction(close_action)
 
