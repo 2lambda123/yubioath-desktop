@@ -196,7 +196,7 @@ class Code(QtWidgets.QWidget):
     @property
     def expired(self):
         code = self.entry.code
-        if code.timestamp > time():
+        if code.timestamp - code.ttl > self.timer.time:
             # System time changed? Code isn't valid yet.
             return True
         if code.timestamp + code.ttl <= self.timer.time:
