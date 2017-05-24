@@ -34,7 +34,7 @@ from .keystore import get_keystore
 from . import messages as m
 from yubioath.core.utils import ccid_supported_but_disabled
 from yubioath.yubicommon.qt import get_active_window
-from PyQt5 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 from time import time
 from collections import namedtuple
 from threading import RLock
@@ -73,10 +73,10 @@ class CredEntry(QtCore.QObject):
 
     def calculate(self):
         window = get_active_window()
-        dialog = QtGui.QMessageBox(window)
+        dialog = QtWidgets.QMessageBox(window)
         dialog.setWindowTitle(m.touch_title)
-        dialog.setStandardButtons(QtGui.QMessageBox.NoButton)
-        dialog.setIcon(QtGui.QMessageBox.Information)
+        dialog.setStandardButtons(QtWidgets.QMessageBox.NoButton)
+        dialog.setIcon(QtWidgets.QMessageBox.Information)
         dialog.setText(m.touch_desc)
         timer = None
 
@@ -85,7 +85,7 @@ class CredEntry(QtCore.QObject):
                 timer.stop()
             dialog.accept()
             if isinstance(code, Exception):
-                QtGui.QMessageBox.warning(window, m.error,
+                QtWidgets.QMessageBox.warning(window, m.error,
                                           code.message)
             else:
                 self.code = code
