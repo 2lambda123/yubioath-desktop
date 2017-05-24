@@ -1,5 +1,5 @@
 == Yubico Authenticator
-image:https://travis-ci.org/tycho/yubioath-desktop.svg?branch=master["Build Status", link="https://travis-ci.org/tycho/yubioath-desktop"]
+image:https://travis-ci.org/Yubico/yubioath-desktop.svg?branch=master["Build Status", link="https://travis-ci.org/Yubico/yubioath-desktop"]
 
 The Yubico Authenticator is a graphical desktop tool and command line tool for
 generating Open AuTHentication (OATH) event-based HOTP and time-based TOTP
@@ -42,18 +42,12 @@ If you run into problems during installation it will likely be with one of the
 dependencies, such as PyQt5 or pyscard. Please see the relevant documentation
 for installing each project, provided by those projects.
 
-You will also need libykpers, which is a C library used to manage credentials
-using the slot-based approach. Installation instructions for this project is
-availabe https://developers.yubico.com/yubikey-personalization/[here].
-
 === Supported devices
 Usage of this software requires a compatible YubiKey device. Yubico
-Authenticator is capable of provisioning and using both slot-based credentials
-(compatible with any YubiKey that supports OTP) as well as the more powerful
-standalone OATH functionality of the YubiKey NEO. To use the standalone OATH
-functionality your YubiKey must have the CCID mode enabled, which can be done
-by using the https://developers.yubico.com/yubikey-neo-manager/[YubiKey NEO
-Manager].
+Authenticator is capable of provisioning and using credentials via the OATH
+functionality of the YubiKey NEO and YubiKey 4. To use this functionality your
+YubiKey must have the CCID mode enabled, which can be done by using the
+https://developers.yubico.com/yubikey-neo-manager/[YubiKey NEO Manager].
 
 ==== Detecting the device when using CCID
 Under Linux and OS X this application uses libccid to communicate with the
@@ -84,7 +78,7 @@ other OSes may not be supported for development.
 Make sure to install the needed dependencies:
 
   sudo apt-get install python-setuptools python-crypto python-pyscard \
-      python-pyside pyside-tools python-click libykpers-1-1 pcscd
+      python-pyside pyside-tools python-click pcscd
 
 ==== Check out the code
 Run these commands to check out the source code:

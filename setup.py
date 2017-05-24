@@ -44,7 +44,7 @@ setup(
         'gui_scripts': ['yubioath-gui=yubioath.gui.__main__:main']
     },
     setup_requires=[],
-    yc_requires=['ctypes', 'qt'],
+    yc_requires=['qt'],
     yc_requires_exclude=['PyQt5'],
     install_requires=['pyscard', 'cryptography', 'psutil'],
     extras_require={

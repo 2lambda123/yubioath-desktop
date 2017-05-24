@@ -89,18 +89,16 @@ def cli(ctx, reader, remember):
 
 @cli.command()
 @click.argument('query', nargs=-1, required=False)
-@click.option('-s1', '--slot1', type=int, default=0)
-@click.option('-s2', '--slot2', type=int, default=0)
 @click.option('-t', '--timestamp', type=int, default=int(time()) + 5)
 @click.pass_context
-def show(ctx, query, slot1, slot2, timestamp):
+def show(ctx, query, timestamp):
     """
     Print one or more codes from a YubiKey.
     """
     dev = ctx.obj['dev']
     controller = ctx.obj['controller']
 
-    creds = controller.read_creds(dev, slot1, slot2, timestamp)
+    creds = controller.read_creds(dev, timestamp)
 
     if creds is None:
         ctx.fail('No YubiKey found!')
@@ -133,7 +131,6 @@ def show(ctx, query, slot1, slot2, timestamp):
 
 @cli.command()
 @click.argument('key')
-@click.option('-S', '--destination', type=click.IntRange(0, 2), default=0)
 @click.option('-N', '--name', required=False, help='Credential name.')
 @click.option(
     '-A', '--oath-type', type=click.Choice(['totp', 'hotp']), default='totp',
@@ -147,9 +144,7 @@ def show(ctx, query, slot1, slot2, timestamp):
     '-I', '--imf', type=int, default=0, help='Initial moving factor.')
 @click.option('-T', '--touch', is_flag=True, help='Require touch.')
 @click.pass_context
-def put(
-    ctx, key, destination, name, oath_type,
-        hmac_algorithm, digits, imf, touch):
+def put(ctx, key, name, oath_type, hmac_algorithm, digits, imf, touch):
     """
     Stores a new OATH credential in the YubiKey.
     """
@@ -185,20 +180,18 @@ def put(
     key = b32decode(unpadded + '=' * (-len(unpadded) % 8))
 
     controller = ctx.obj['controller']
-    if destination == 0:
-        dev = ctx.obj['dev'] or ctx.fail('No YubiKey found!')
-        name = name or click.prompt('Enter a name for the credential')
-        oath_type = TYPE_TOTP if oath_type == 'totp' else TYPE_HOTP
-        try:
-            controller.add_cred(dev, name, key, oath_type, digits=digits,
-                                imf=imf, algo=algo, require_touch=touch)
-        except NoSpaceError:
-            ctx.fail(
-                'There is not enough space to add another credential on your'
-                ' device. To create free space to add a new '
-                'credential, delete those you no longer need.')
-    else:
-        controller.add_cred_legacy(destination, key, touch)
+
+    dev = ctx.obj['dev'] or ctx.fail('No YubiKey found!')
+    name = name or click.prompt('Enter a name for the credential')
+    oath_type = TYPE_TOTP if oath_type == 'totp' else TYPE_HOTP
+    try:
+        controller.add_cred(dev, name, key, oath_type, digits=digits,
+                            imf=imf, algo=algo, require_touch=touch)
+    except NoSpaceError:
+        ctx.fail(
+            'There is not enough space to add another credential on your'
+            ' device. To create free space to add a new '
+            'credential, delete those you no longer need.')
 
 
 @cli.command()
@@ -209,11 +202,8 @@ def delete(ctx, name):
     Deletes a credential from the YubiKey.
     """
     controller = ctx.obj['controller']
-    if name in ['YubiKey slot 1', 'YubiKey slot 2']:
-        controller.delete_cred_legacy(int(name[-1]))
-    else:
-        dev = ctx.obj['dev'] or ctx.fail('No YubiKey found!')
-        controller.delete_cred(dev, name)
+    dev = ctx.obj['dev'] or ctx.fail('No YubiKey found!')
+    controller.delete_cred(dev, name)
     click.echo('Credential deleted!')
 
 
@@ -263,11 +253,11 @@ def forget(ctx):
 @click.pass_context
 def reset(ctx, force):
     """
-    Deletes all stored OATH credentials from non-slot based storage.
+    Deletes all stored OATH credentials from storage.
     """
     dev = ctx.obj['dev'] or ctx.fail('No YubiKey found!')
     controller = ctx.obj['controller']
-    force or click.confirm('WARNING!!! Really delete all non slot-based OATH '
+    force or click.confirm('WARNING!!! Really delete all OATH '
                            'credentials from the YubiKey?', abort=True)
 
     controller.reset_device(dev)

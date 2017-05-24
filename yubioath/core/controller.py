@@ -26,27 +26,10 @@
 
 
 from .standard import YubiOathCcid
-from .legacy_ccid import LegacyOathCcid
-from .exc import CardError, InvalidSlotError, NeedsTouchError
-import time
-import sys
-try:
-    from .legacy_otp import open_otp, LegacyOathOtp, LegacyCredential
-except ImportError:
-    sys.stderr.write('libykpers not found!\n')
-    open_otp = None
+from .exc import CardError
 
 
 class Controller(object):
-
-    @property
-    def otp_supported(self):
-        return bool(open_otp)
-
-    def open_otp(self):
-        otp_dev = open_otp()
-        if otp_dev:
-            return LegacyOathOtp(otp_dev)
 
     def _prompt_touch(self):
         pass
@@ -57,43 +40,9 @@ class Controller(object):
     def unlock(self, std):
         raise ValueError('Password required')
 
-    def read_slot_ccid(self, std, slot, digits, timestamp=None):
-        cred = LegacyCredential(std, slot, digits)
-        try:
-            return (cred, cred.calculate(timestamp))
-        except InvalidSlotError:
-            return (cred, 'INVALID')
-
-    def read_slot_otp(self, cred, timestamp=None, use_touch=False):
-        if cred.touch:
-            if not use_touch:
-                raise NeedsTouchError()
-            self._prompt_touch()
-
-        try:
-            return (cred, cred.calculate(timestamp))
-        except InvalidSlotError:
-            return (cred, 'INVALID')
-        except NeedsTouchError:
-            if use_touch:
-                try:
-                    time.sleep(0.1)  # Give the key a little time...
-                    self._prompt_touch()
-                    start = time.time()
-                    return (cred, cred.calculate(timestamp))
-                except InvalidSlotError:
-                    error = 'INVALID' if time.time() - start < 1 else 'TIMEOUT'
-                    return (cred, error)
-            return (cred, None)
-        finally:
-            if cred.touch:
-                self._end_prompt_touch()
-
-    def read_creds(self, ccid_dev, slot1, slot2, timestamp, mayblock=True):
+    def read_creds(self, ccid_dev, timestamp):
         results = []
         key_found = False
-        do_legacy = mayblock and bool(slot1 or slot2)
-        legacy_creds = [None, None]
 
         if ccid_dev:
             try:
@@ -105,42 +54,8 @@ class Controller(object):
             except CardError:
                 pass  # No applet?
 
-            if do_legacy:
-                try:
-                    legacy = LegacyOathCcid(ccid_dev)
-                    for (slot, digits) in [(0, slot1), (1, slot2)]:
-                        if digits:
-                            try:
-                                legacy_creds[slot] = self.read_slot_ccid(
-                                    legacy, slot + 1, digits, timestamp)
-                            except NeedsTouchError:
-                                pass  # Handled over OTP instead
-                except CardError:
-                    pass  # No applet?
-
-        if self.otp_supported and ((slot1 and not legacy_creds[0]) or
-                                   (slot2 and not legacy_creds[1])):
-            if ccid_dev:
-                ccid_dev.close()
-            legacy = self.open_otp()
-            if legacy:
-                key_found = True
-                if not legacy_creds[0] and slot1:
-                    legacy_creds[0] = self.read_slot_otp(
-                        LegacyCredential(legacy, 1, slot1), timestamp, True)
-                if not legacy_creds[1] and slot2:
-                    legacy_creds[1] = self.read_slot_otp(
-                        LegacyCredential(legacy, 2, slot2), timestamp, True)
-                del legacy._device
-
         if not key_found:
             return None
-
-        # Add legacy slots first.
-        if legacy_creds[1]:
-            results.insert(0, legacy_creds[1])
-        if legacy_creds[0]:
-            results.insert(0, legacy_creds[0])
 
         return results
 
@@ -156,22 +71,10 @@ class Controller(object):
             self.unlock(dev)
         dev.put(*args, **kwargs)
 
-    def add_cred_legacy(self, *args, **kwargs):
-        legacy = self.open_otp()
-        if not legacy:
-            raise Exception('No YubiKey found!')
-        legacy.put(*args, **kwargs)
-
     def delete_cred(self, dev, name):
         if dev.locked:
             self.unlock(dev)
         dev.delete(name)
-
-    def delete_cred_legacy(self, slot):
-        legacy = self.open_otp()
-        if not legacy:
-            raise Exception('No YubiKey found!')
-        legacy.delete(slot)
 
     def reset_device(self, dev):
         dev.reset()

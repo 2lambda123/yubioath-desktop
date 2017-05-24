@@ -37,14 +37,6 @@ to the global options:
 === *show* [OPTIONS] [QUERY]
     Display one or more one time codes calculated by the YubiKey.
 
-*-s1, --slot1 DIGITS*::
-    Calculate and show a one time code from slot 1, displaying DIGITS number of
-    digits.
-
-*-s2, --slot2 DIGITS*::
-    Calculate and show a one time code from slot 2, displaying DIGITS number of
-    digits.
-
 *-t, --timestamp TIMESTAMP*::
     Use the user provided TIMESTAMP instead of the system clock.
 
@@ -61,35 +53,24 @@ to the global options:
 === *put* [OPTIONS] KEY
     Load and store a credential into the YubiKey.
 
-*-S, --destination DEST*::
-    Where DEST is one of:
-    - *0* the main applet (default).
-    - *1* the YubiKey standard slot 1.
-    - *2* the YubiKey standard slot 2.
-
 *-N, --name NAME*::
     The name to give the credential. When giving a name with an issuer, the
     issuer and name should be separated by a colon: _issuer:name_.
-    Not applicable to slot-based credentials.
 
 *-A, --oath-type ALGORITHM*::
     OATH algorithm to use. Should be one of *totp* (default) and *hotp*.
-    Not applicable to slot-based credentials.
 
 *-D, --digits DIGITS*::
     The number of digits to output when generating codes. Should be *6*
     (default) or *8*.
-    Not applicable to slot-based credentials.
 
 *-I IMF, --imf IMF*::
     The initial value to store for the counter. Only applicable for HOTP
     credential.
-    Not applicable to slot-based credentials.
 
 *-T, --touch*::
-    When set, the slot will require the user to press the button on the YubiKey
-    before calculating a code.
-    *Only* applicable to slot-based credentials.
+    When set, the user will be required to press the button on the YubiKey
+    before calculating the code.
 
 *-h, --help*::
     Shows additional help for the sub command.

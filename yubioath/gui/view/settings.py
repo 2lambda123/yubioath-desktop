@@ -44,31 +44,6 @@ class SettingsDialog(qt.Dialog):
 
     def _build_ui(self):
         layout = QtWidgets.QFormLayout(self)
-        layout.addRow(self.section(m.ykstd_slots))
-
-        # YubiKey slot 1
-        self._slot1_enabled = QtWidgets.QCheckBox(m.enable_slot_1 % 1)
-        self._slot1_enabled.setToolTip(m.tt_slot_enabled_1 % 1)
-        layout.addRow(self._slot1_enabled)
-        self._slot1_digits = QtWidgets.QComboBox()
-        self._slot1_digits.addItems(['6', '8'])
-        self._slot1_enabled.stateChanged.connect(self._slot1_digits.setEnabled)
-        self._slot1_digits.setEnabled(False)
-        self._slot1_digits.setToolTip(m.tt_num_digits)
-        layout.addRow(m.n_digits, self._slot1_digits)
-        layout.labelForField(self._slot1_digits).setIndent(INDENT)
-
-        # YubiKey slot 2
-        self._slot2_enabled = QtWidgets.QCheckBox(m.enable_slot_1 % 2)
-        self._slot2_enabled.setToolTip(m.tt_slot_enabled_1 % 2)
-        layout.addRow(self._slot2_enabled)
-        self._slot2_digits = QtWidgets.QComboBox()
-        self._slot2_digits.addItems(['6', '8'])
-        self._slot2_enabled.stateChanged.connect(self._slot2_digits.setEnabled)
-        self._slot2_digits.setEnabled(False)
-        self._slot2_digits.setToolTip(m.tt_num_digits)
-        layout.addRow(m.n_digits, self._slot2_digits)
-        layout.labelForField(self._slot2_digits).setIndent(INDENT)
 
         layout.addRow(self.section(m.advanced))
 
@@ -94,29 +69,11 @@ class SettingsDialog(qt.Dialog):
         layout.addRow(btns)
 
     def _reset(self):
-        slot1 = self.settings.get('slot1', 0)
-        self._slot1_digits.setCurrentIndex(1 if slot1 == 8 else 0)
-        self._slot1_enabled.setChecked(bool(slot1))
-
-        slot2 = self.settings.get('slot2', 0)
-        self._slot2_digits.setCurrentIndex(1 if slot2 == 8 else 0)
-        self._slot2_enabled.setChecked(bool(slot2))
-
         self._systray.setChecked(self.settings.get('systray', False))
         self._kill_scdaemon.setChecked(
             self.settings.get('kill_scdaemon', False))
 
         self._reader_name.setText(self.settings.get('reader', 'Yubikey'))
-
-    @property
-    def slot1(self):
-        return self._slot1_enabled.isChecked() \
-            and int(self._slot1_digits.currentText())
-
-    @property
-    def slot2(self):
-        return self._slot2_enabled.isChecked() \
-            and int(self._slot2_digits.currentText())
 
     @property
     def systray(self):
@@ -131,8 +88,6 @@ class SettingsDialog(qt.Dialog):
         return self._reader_name.text()
 
     def _save(self):
-        self.settings['slot1'] = self.slot1
-        self.settings['slot2'] = self.slot2
         self.settings['systray'] = self.systray
         self.settings['kill_scdaemon'] = self.kill_scdaemon
         self.settings['reader'] = self.reader_name

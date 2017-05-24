@@ -31,10 +31,6 @@ from yubioath.gui.view.ccid_disabled import CcidDisabledDialog
 from yubioath.yubicommon import qt
 from ..cli.keystore import CONFIG_HOME
 
-try:
-    from ..core.legacy_otp import ykpers_version
-except ImportError:
-    ykpers_version = 'None'
 from ..core.utils import kill_scdaemon
 from ..core.exc import NoSpaceError
 from . import messages as m
@@ -44,7 +40,6 @@ from .view.systray import Systray
 from .view.codes import CodesWidget
 from .view.settings import SettingsDialog
 from .view.add_cred import AddCredDialog
-from .view.add_cred_legacy import AddCredDialog as AddCredLegacyDialog
 from .view.set_password import SetPasswordDialog
 import sys
 import os
@@ -56,10 +51,7 @@ ABOUT_TEXT = """
 <h2>%s</h2>
 %s<br>
 %s
-<h4>%s</h4>
-%%s
-<br><br>
-""" % (m.app_name, m.copyright, m.version_1, m.libraries)
+""" % (m.app_name, m.copyright, m.version_1)
 
 
 class MainWidget(QtWidgets.QStackedWidget):
@@ -212,14 +204,11 @@ class YubiOathApplication(qt.Application):
         else:
             event.accept()
 
-    def _libversions(self):
-        return 'ykpers: %s' % ykpers_version
-
     def _about(self):
         QtWidgets.QMessageBox.about(
             self.window,
             m.about_1 % m.app_name,
-            ABOUT_TEXT % (self.version, self._libversions()))
+            ABOUT_TEXT % (self.version,))
 
     def _add_credential(self):
         c = self._controller.get_capabilities()
@@ -245,15 +234,6 @@ class YubiOathApplication(qt.Application):
                     except NoSpaceError:
                         QtWidgets.QMessageBox.critical(
                             self.window, m.no_space, m.no_space_desc)
-        elif c.otp:
-            dialog = AddCredLegacyDialog(
-                self.worker, c.otp, parent=self.window)
-            if dialog.exec_():
-                self._controller.add_cred_legacy(dialog.slot, dialog.key,
-                                                 dialog.touch)
-                key = 'slot%d' % dialog.slot
-                self._settings[key] = dialog.n_digits
-                self._controller.refresh_codes()
         else:
             QtWidgets.QMessageBox.critical(self.window, 'No key', 'No key')
 

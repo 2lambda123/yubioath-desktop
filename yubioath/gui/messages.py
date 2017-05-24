@@ -37,7 +37,6 @@ app_name = "Yubico Authenticator"
 win_title_1 = "Yubico Authenticator (%s)"
 about_1 = "About: %s"
 copyright = "Copyright &copy; Yubico"
-libraries = "Library versions"
 version_1 = "Version: %s"
 wait = "Please wait..."
 error = "Error"
@@ -62,8 +61,6 @@ key_busy = "YubiKey already in use!"
 key_present = "YubiKey found. Reading..."
 key_removed = "YubiKey removed"
 key_removed_desc = "There was an error communicating with the device!"
-ykstd_slots = "YubiKey standard slots"
-enable_slot_1 = "Read from slot %d"
 n_digits = "Number of digits"
 enable_systray = "Show in system tray"
 kill_scdaemon = "Kill scdaemon on show"
@@ -94,16 +91,9 @@ This action cannot be undone.
 <br><br>
 <b>Delete credential: %s</b>
 """
-slot = "YubiKey slot"
-slot_2 = "Slot %d (%s)"
 free = "free"
 in_use = "in use"
 require_touch = "Require touch"
-no_slot = "No slot chosen"
-no_slot_desc = "Please choose a slot to write the credential to"
-overwrite_slot = "Overwrite slot?"
-overwrite_slot_desc_1 = "This will overwrite the credential currently " \
-    "stored in slot %d. This action cannot be undone."
 overwrite_entry = "Overwrite entry?"
 overwrite_entry_desc = "An entry with this username already exists.\n\nDo " \
     "you wish to overwrite it? This action cannot be undone."
@@ -112,9 +102,6 @@ qr_scanning = "Scanning for QR code..."
 qr_not_found = "QR code not found"
 qr_not_found_desc = "No usable QR code detected. Make sure the QR code is " \
     "fully visible on your primary screen and try again."
-qr_not_supported = "Credential not supported"
-qr_not_supported_desc = "This credential type is not supported for slot " \
-    "based usage."
 qr_invalid_type = "Invalid OTP type"
 qr_invalid_type_desc = "Only TOTP and HOTP types are supported."
 qr_invalid_digits = "Invalid number of digits"
@@ -124,8 +111,6 @@ qr_invalid_algo_desc = "SHA1 and SHA256 are the only supported OTP " \
     "algorithms at this time."
 qr_missing_key = "Invalid QR code"
 qr_missing_key_desc = "The QR code found on screen is missing the '%s' attribute."
-tt_slot_enabled_1 = "Check to calculate TOTP codes using the YubiKey " \
-    "standard slot %d credential."
 tt_num_digits = "The number of digits to show for the credential."
 tt_systray = "When checked, display an icon in the systray, and leave the " \
     "application running there when closed."

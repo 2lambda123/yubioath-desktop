@@ -43,17 +43,3 @@ class NoSpaceError(Exception):
 
     def __init__(self):
         super(NoSpaceError, self).__init__('No space available on device.')
-
-
-class InvalidSlotError(Exception):
-
-    def __init__(self):
-        super(InvalidSlotError, self).__init__(
-            'The selected slot does not contain a valid OATH credential.')
-
-
-class NeedsTouchError(Exception):
-
-    def __init__(self):
-        super(NeedsTouchError, self).__init__(
-            'The selected slot needs touch to be used.')

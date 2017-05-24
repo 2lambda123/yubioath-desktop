@@ -101,10 +101,7 @@ class CredEntry(QtCore.QObject):
             timer.start(500)
 
     def delete(self):
-        if self.cred.name in ['YubiKey slot 1', 'YubiKey slot 2']:
-            self._controller.delete_cred_legacy(int(self.cred.name[-1]))
-        else:
-            self._controller.delete_cred(self.cred.name)
+        self._controller.delete_cred(self.cred.name)
 
 
 Capabilities = namedtuple('Capabilities', 'ccid otp version')
@@ -194,14 +191,6 @@ class GuiController(QtCore.QObject, Controller):
         return self._settings.get('reader', 'Yubikey')
 
     @property
-    def slot1(self):
-        return self._settings.get('slot1', 0)
-
-    @property
-    def slot2(self):
-        return self._settings.get('slot2', 0)
-
-    @property
     def mute_ccid_disabled_warning(self):
         return self._settings.get('mute_ccid_disabled_warning', 0)
 
@@ -219,10 +208,6 @@ class GuiController(QtCore.QObject, Controller):
         return True
 
     @property
-    def otp_enabled(self):
-        return self.otp_supported and bool(self.slot1 or self.slot2)
-
-    @property
     def credentials(self):
         return self._creds
 
@@ -238,9 +223,6 @@ class GuiController(QtCore.QObject, Controller):
             if ccid_dev:
                 dev = YubiOathCcid(ccid_dev)
                 return Capabilities(True, None, dev.version)
-            legacy = self.open_otp()
-            if legacy:
-                return Capabilities(None, legacy.slot_status(), (0, 0, 0))
             return Capabilities(None, None, (0, 0, 0))
 
     def get_entry_names(self):
@@ -324,19 +306,6 @@ class GuiController(QtCore.QObject, Controller):
             if cred.oath_type == TYPE_HOTP:
                 ttl = INF
 
-            if cred.name in ['YubiKey slot 1', 'YubiKey slot 2']:
-                legacy = self.open_otp()
-                if not legacy:
-                    raise ValueError('YubiKey removed!')
-
-                try:
-                    cred._legacy = legacy
-                    cred, code = super(GuiController, self).read_slot_otp(
-                        cred, timestamp, True)
-                finally:
-                    cred._legacy = None  # Release the handle.
-                return Code(code, timestamp, TIME_PERIOD)
-
             ccid_dev = self.watcher.open()
             if not ccid_dev:
                 if self.watcher.status != CardStatus.Present:
@@ -347,9 +316,6 @@ class GuiController(QtCore.QObject, Controller):
                 return Code(dev.calculate(cred.name, cred.oath_type, timestamp),
                             timestamp, ttl)
 
-    def read_slot_otp(self, cred, timestamp=None, use_touch=False):
-        return super(GuiController, self).read_slot_otp(cred, timestamp, False)
-
     def _refresh_codes_worker(self, timestamp=None, std=None):
         with self._lock:
             if not std:
@@ -359,8 +325,7 @@ class GuiController(QtCore.QObject, Controller):
             self._needs_read = bool(self._reader and device is None)
             timestamp = timestamp or self.timer.time
             try:
-                creds = self.read_creds(device, self.slot1, self.slot2, timestamp,
-                                        False)
+                creds = self.read_creds(device, timestamp)
             except DeviceLockedError:
                 creds = []
             self._set_creds(creds)
@@ -378,21 +343,12 @@ class GuiController(QtCore.QObject, Controller):
             if self._reader and self._needs_read:
                 self.refresh_codes()
             elif self._reader is None:
-                if self.otp_enabled:
-                    def refresh_otp():
-                        with self._lock:
-                            timestamp = self.timer.time
-                            read = self.read_creds(
-                                None, self.slot1, self.slot2, timestamp, False)
-                            self._set_creds(read)
-                    self._app.worker.post_bg(refresh_otp)
-                else:
-                    if ccid_supported_but_disabled():
-                        if not self._current_device_has_ccid_disabled:
-                            self.ccid_disabled.emit()
-                        self._current_device_has_ccid_disabled = True
-                        event.accept()
-                        return
+                if ccid_supported_but_disabled():
+                    if not self._current_device_has_ccid_disabled:
+                        self.ccid_disabled.emit()
+                    self._current_device_has_ccid_disabled = True
+                    event.accept()
+                    return
             self._current_device_has_ccid_disabled = False
         event.accept()
 
@@ -406,12 +362,6 @@ class GuiController(QtCore.QObject, Controller):
                     self._creds = None
                     self.refresh_codes()
 
-    def add_cred_legacy(self, *args, **kwargs):
-        with self._lock:
-            super(GuiController, self).add_cred_legacy(*args, **kwargs)
-            self._creds = None
-            self.refresh_codes()
-
     def delete_cred(self, name):
         with self._lock:
             ccid_dev = self.watcher.open()
@@ -421,12 +371,6 @@ class GuiController(QtCore.QObject, Controller):
                     super(GuiController, self).delete_cred(dev, name)
                     self._creds = None
                     self.refresh_codes()
-
-    def delete_cred_legacy(self, *args, **kwargs):
-        with self._lock:
-            super(GuiController, self).delete_cred_legacy(*args, **kwargs)
-            self._creds = None
-            self.refresh_codes()
 
     def set_password(self, password, remember=False):
         with self._lock:
