@@ -44,7 +44,7 @@ class GetPasswordDialog(qt.Dialog):
         layout.addRow(self._remember)
 
         btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok |
-                                      QtWidgets.QDialogButtonBox.Cancel)
+                                          QtWidgets.QDialogButtonBox.Cancel)
         btns.accepted.connect(self.accept)
         btns.rejected.connect(self.reject)
         layout.addWidget(btns)

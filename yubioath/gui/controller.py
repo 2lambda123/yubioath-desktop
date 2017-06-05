@@ -34,12 +34,10 @@ from .keystore import get_keystore
 from . import messages as m
 from yubioath.core.utils import ccid_supported_but_disabled
 from yubioath.yubicommon.qt import get_active_window
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 from time import time
 from collections import namedtuple
 from threading import RLock
-
-import sys
 
 
 Code = namedtuple('Code', 'code timestamp ttl')
@@ -375,13 +373,13 @@ class GuiController(QtCore.QObject, Controller):
 
     def timerEvent(self, event):
         if not is_minimized(self._app.window):
-            timestamp = self.timer.time
             if self._reader and self._needs_read:
                 self.refresh_codes()
             elif self._reader is None:
                 if self.otp_enabled:
                     def refresh_otp():
                         with self._lock:
+                            timestamp = self.timer.time
                             read = self.read_creds(
                                 None, self.slot1, self.slot2, timestamp, False)
                             self._set_creds(read)

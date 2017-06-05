@@ -189,8 +189,7 @@ class AddCredDialog(qt.Dialog):
 
     def _save(self):
         if not self._cred_name.hasAcceptableInput():
-            QtWidgets.QMessageBox.warning(
-                    self, m.invalid_name, m.invalid_name_desc)
+            QtWidgets.QMessageBox.warning(self, m.invalid_name, m.invalid_name_desc)
             self._cred_name.selectAll()
         elif not self._cred_key.hasAcceptableInput():
             QtWidgets.QMessageBox.warning(self, m.invalid_key, m.invalid_key_desc)

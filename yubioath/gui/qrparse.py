@@ -77,7 +77,7 @@ def check_line(pixels):
 def check_row(line, bpp, x_offs, x_width):
     pixels = []
     for i in range(x_offs, x_offs + x_width):
-        pixels.append(line[i*bpp:(i+1)*bpp])
+        pixels.append(line[i * bpp:(i + 1) * bpp])
     return check_line(pixels)
 
 
@@ -86,15 +86,15 @@ def check_col(image, bpp, x, y_offs, y_height):
     for i in range(y_offs, y_offs + y_height):
         line = image.scanLine(i)
         line.setsize(image.bytesPerLine())
-        pixels.append(line[x*bpp:(x+1)*bpp])
+        pixels.append(line[x * bpp:(x + 1) * bpp])
     return check_line(pixels)
 
 
 def read_line(line, bpp, x_offs, x_width):
-    matching_dark = not is_dark(line[x_offs*bpp:(x_offs+1)*bpp])
+    matching_dark = not is_dark(line[x_offs * bpp:(x_offs + 1) * bpp])
     matched = []
     for x in range(x_offs, x_offs + x_width):
-        pixel = line[x*bpp:(x+1)*bpp]
+        pixel = line[x * bpp:(x + 1) * bpp]
         if is_dark(pixel):  # Dark pixel
             if matching_dark:
                 matched[-1] += 1
@@ -121,7 +121,7 @@ def read_bits(image, bpp, img_x, img_y, img_w, img_h, size):
         qr_line = []
         for qr_x in range(size):
             x = img_x + int(qr_x_w / 2 + qr_x * qr_x_w)
-            qr_line.append(is_dark(img_line[x * bpp:(x+1) * bpp]))
+            qr_line.append(is_dark(img_line[x * bpp:(x + 1) * bpp]))
         qr_data.append(qr_line)
     return qr_data
 

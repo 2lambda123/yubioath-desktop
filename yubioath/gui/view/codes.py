@@ -143,9 +143,9 @@ class CodeMenu(QtWidgets.QMenu):
 
     def _delete(self):
         res = QtWidgets.QMessageBox.warning(self, m.delete_title,
-                                        m.delete_desc_1 % self.entry.cred.name,
-                                        QtWidgets.QMessageBox.Ok,
-                                        QtWidgets.QMessageBox.Cancel)
+                                            m.delete_desc_1 % self.entry.cred.name,
+                                            QtWidgets.QMessageBox.Ok,
+                                            QtWidgets.QMessageBox.Cancel)
         if res == QtWidgets.QMessageBox.Ok:
             self.entry.delete()
 

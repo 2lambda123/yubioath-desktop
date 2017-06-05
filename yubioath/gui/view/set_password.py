@@ -52,7 +52,7 @@ class SetPasswordDialog(qt.Dialog):
         layout.addRow(self._remember)
 
         btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok |
-                                      QtWidgets.QDialogButtonBox.Cancel)
+                                          QtWidgets.QDialogButtonBox.Cancel)
         btns.accepted.connect(self._save)
         btns.rejected.connect(self.reject)
         layout.addRow(btns)
@@ -62,8 +62,9 @@ class SetPasswordDialog(qt.Dialog):
             self._new_pass.setText('')
             self._ver_pass.setText('')
             self._new_pass.setFocus()
-            QtWidgets.QMessageBox.warning(self, m.pass_mismatch,
-                                      m.pass_mismatch_desc)
+            QtWidgets.QMessageBox.warning(self,
+                                          m.pass_mismatch,
+                                          m.pass_mismatch_desc)
         else:
             self.accept()
 

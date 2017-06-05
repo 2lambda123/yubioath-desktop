@@ -112,14 +112,14 @@ class Controller(object):
                         if digits:
                             try:
                                 legacy_creds[slot] = self.read_slot_ccid(
-                                    legacy, slot+1, digits, timestamp)
+                                    legacy, slot + 1, digits, timestamp)
                             except NeedsTouchError:
                                 pass  # Handled over OTP instead
                 except CardError:
                     pass  # No applet?
 
-        if self.otp_supported and ((slot1 and not legacy_creds[0])
-                                   or (slot2 and not legacy_creds[1])):
+        if self.otp_supported and ((slot1 and not legacy_creds[0]) or
+                                   (slot2 and not legacy_creds[1])):
             if ccid_dev:
                 ccid_dev.close()
             legacy = self.open_otp()

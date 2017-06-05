@@ -63,7 +63,7 @@ def timeit(f):
 
         if te - ts > 0.01:
             print("func:%r args:[%r, %r] took: %2.4f sec" %
-              (f.__name__, args, kw, te-ts))
+                  (f.__name__, args, kw, te - ts))
         return result
 
     return wrapper
@@ -84,12 +84,12 @@ def get_random_bytes(n):
 
 
 def time_challenge(t=None):
-    return struct.pack('>q', int((t or time.time())/30))
+    return struct.pack('>q', int((t or time.time()) / 30))
 
 
 def parse_full(resp):
     offs = byte2int(resp[-1]) & 0xf
-    return parse_truncated(resp[offs:offs+4])
+    return parse_truncated(resp[offs:offs + 4])
 
 
 def parse_truncated(resp):
@@ -120,12 +120,11 @@ def parse_uri(uri):
 def derive_key(salt, passphrase):
     if not passphrase:
         return None
-    kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA1(),
-            length=16,
-            salt=salt,
-            iterations=1000,
-            backend=default_backend())
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA1(),
+                     length=16,
+                     salt=salt,
+                     iterations=1000,
+                     backend=default_backend())
     return kdf.derive(passphrase.encode('utf-8'))
 
 
@@ -161,7 +160,7 @@ def b2len(bs):
 
 def kill_scdaemon():
     for proc in psutil.process_iter():
-        if proc.name().lower() in [ 'scdaemon', 'scdaemon.exe' ]:
+        if proc.name().lower() in ['scdaemon', 'scdaemon.exe']:
             proc.kill()
 
 
@@ -210,6 +209,7 @@ def _get_pids_linux():
                 pids.append(pid)
 
     return pids
+
 
 def _get_pids_osx():
     pids = []

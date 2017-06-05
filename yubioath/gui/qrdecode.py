@@ -43,7 +43,7 @@ def decode_qr_data(qr_data):
     level = bits_to_int(qr_data[8][:2])
     mask = bits_to_int(qr_data[8][2:5]) ^ 0b101
 
-    read_mask = [x[:] for x in [[1]*size]*size]
+    read_mask = [x[:] for x in [[1] * size] * size]
 
     # Verify/Remove alignment patterns
     remove_locator_patterns(qr_data, read_mask)
@@ -77,14 +77,14 @@ LOCATOR_BOX = [
 ]
 
 MASKS = [
-    lambda x, y: (y+x) % 2 == 0,
+    lambda x, y: (y + x) % 2 == 0,
     lambda x, y: y % 2 == 0,
     lambda x, y: x % 3 == 0,
-    lambda x, y: (y+x) % 3 == 0,
-    lambda x, y: (y//2 + x//3) % 2 == 0,
-    lambda x, y: (y*x) % 2 + (y*x) % 3 == 0,
-    lambda x, y: ((y*x) % 2 + (y*x) % 3) % 2 == 0,
-    lambda x, y: ((y+x) % 2 + (y*x) % 3) % 2 == 0
+    lambda x, y: (y + x) % 3 == 0,
+    lambda x, y: (y // 2 + x // 3) % 2 == 0,
+    lambda x, y: (y * x) % 2 + (y * x) % 3 == 0,
+    lambda x, y: ((y * x) % 2 + (y * x) % 3) % 2 == 0,
+    lambda x, y: ((y + x) % 2 + (y * x) % 3) % 2 == 0
 ]
 
 ALPHANUM = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:'
@@ -186,16 +186,16 @@ def check_region(data, x, y, match):
     """Compares a region to the given """
     w = len(match[0])
     for cy in range(len(match)):
-        if match[cy] != data[y+cy][x:x+w]:
+        if match[cy] != data[y + cy][x:x + w]:
             return False
     return True
 
 
 def zero_region(data, x, y, w, h):
     """Fills a region with zeroes."""
-    for by in range(y, y+h):
+    for by in range(y, y + h):
         line = data[by]
-        data[by] = line[:x] + [0]*w + line[x+w:]
+        data[by] = line[:x] + [0] * w + line[x + w:]
 
 
 def bits_to_int(bits):
@@ -208,7 +208,7 @@ def bits_to_int(bits):
 
 def bits_to_bytes(bits):
     """Converts a list of bits into a string of bytes"""
-    return ''.join([chr(bits_to_int(bits[i:i+8]))
+    return ''.join([chr(bits_to_int(bits[i:i + 8]))
                     for i in range(0, len(bits), 8)])
 
 
@@ -278,7 +278,7 @@ def parse_bits(bits, version):
     elif enc == 4:  # Bytes
         n_l = 8 if version < 10 else 16
         l, bits = bits_to_int(bits[:n_l]), bits[n_l:]
-        return bits_to_bytes(bits[:l*8]), bits[l*8:]
+        return bits_to_bytes(bits[:l * 8]), bits[l * 8:]
     else:
         raise ValueError('Unsupported encoding: %d' % enc)
 
@@ -293,13 +293,13 @@ def remove_locator_patterns(data, mask):
         raise ValueError('Top-left square missing')
     zero_region(mask, 0, 0, 9, 9)
 
-    if not check_region(data, width-7, 0, LOCATOR_BOX):
+    if not check_region(data, width - 7, 0, LOCATOR_BOX):
         raise ValueError('Top-right square missing')
-    zero_region(mask, width-8, 0, 8, 9)
+    zero_region(mask, width - 8, 0, 8, 9)
 
-    if not check_region(data, 0, width-7, LOCATOR_BOX):
+    if not check_region(data, 0, width - 7, LOCATOR_BOX):
         raise ValueError('Bottom-left square missing')
-    zero_region(mask, 0, width-8, 9, 8)
+    zero_region(mask, 0, width - 8, 9, 8)
 
 
 def remove_alignment_patterns(mask, version):
@@ -309,7 +309,7 @@ def remove_alignment_patterns(mask, version):
         for x in positions:
             # Do not try to remove patterns in locator pattern positions.
             if (x, y) not in [(6, 6), (6, positions[-1]), (positions[-1], 6)]:
-                zero_region(mask, x-2, y-2, 5, 5)
+                zero_region(mask, x - 2, y - 2, 5, 5)
 
 
 def remove_timing_patterns(mask):
@@ -323,8 +323,8 @@ def remove_timing_patterns(mask):
 def remove_version_info(mask):
     """Removes version data. Only for version 7 and greater."""
     width = len(mask)
-    zero_region(mask, width-11, 0, 3, 6)
-    zero_region(mask, 0, width-11, 5, 6)
+    zero_region(mask, width - 11, 0, 3, 6)
+    zero_region(mask, 0, width - 11, 5, 6)
 
 
 def read_bits(qr_data, read_mask, mask):
@@ -339,6 +339,6 @@ def read_bits(qr_data, read_mask, mask):
             y_range = reversed(y_range)
         for y in y_range:
             for i in reversed(range(2)):
-                if read_mask[y][x+i]:
-                    bits.append(qr_data[y][x+i] ^ mask_f(x+i, y))
+                if read_mask[y][x + i]:
+                    bits.append(qr_data[y][x + i] ^ mask_f(x + i, y))
     return bits

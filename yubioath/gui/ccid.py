@@ -114,8 +114,10 @@ class PollerThread(threading.Thread):
         except:
             return []
 
+
 class CardStatus:
     NoCard, InUse, Present = range(3)
+
 
 class CardWatcher(QtCore.QObject):
     status_changed = QtCore.pyqtSignal(int)
