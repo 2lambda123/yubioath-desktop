@@ -421,10 +421,10 @@ class GuiController(QtCore.QObject, Controller):
                     self.refresh_codes()
 
     def delete_cred_legacy(self, *args, **kwargs):
-        lock = self.grab_lock()
-        super(GuiController, self).delete_cred_legacy(*args, **kwargs)
-        self._creds = None
-        self.refresh_codes()
+        with self._lock:
+            super(GuiController, self).delete_cred_legacy(*args, **kwargs)
+            self._creds = None
+            self.refresh_codes()
 
     def set_password(self, password, remember=False):
         with self._lock:
