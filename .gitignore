@@ -14,3 +14,9 @@ man/*.1
 
 # IntelliJ / PyCharm
 .idea/
+
+# pyinstaller cruft
+/yubioath-gui-script.py
+/yubioath-gui.pkg
+/yubioath-script.py
+/yubioath.pkg
