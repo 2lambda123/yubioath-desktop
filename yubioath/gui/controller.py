@@ -64,6 +64,8 @@ class CredEntry(QtCore.QObject):
     def code(self, value):
         self._code = value
         self.changed.emit()
+        if self.manual:
+            self._controller.refreshed.emit()
 
     @property
     def manual(self):
