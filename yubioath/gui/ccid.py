@@ -195,5 +195,5 @@ class CardWatcher(QtCore.QObject):
         self._thread.join()
 
 
-def observe_reader(reader_name='Yubikey', callback=None):
+def ccid_watcher(reader_name='Yubikey', callback=None):
     return CardWatcher(reader_name, callback)

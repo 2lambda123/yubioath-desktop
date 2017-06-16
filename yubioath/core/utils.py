@@ -35,6 +35,7 @@ try:
     from urllib import unquote
 except ImportError:
     from urllib.parse import unquote, urlparse, parse_qs
+from collections import namedtuple
 import os
 import subprocess
 import struct
@@ -51,6 +52,7 @@ __all__ = [
     'SCHEME_STEAM',
     'TYPE_HOTP',
     'TYPE_TOTP',
+    'Capabilities',
     'der_pack',
     'der_read',
     'derive_key',
@@ -90,6 +92,13 @@ def timeit(f):
         return result
 
     return wrapper
+
+
+#
+# Device interface related
+#
+
+Capabilities = namedtuple('Capabilities', 'present algorithms touch')
 
 
 #

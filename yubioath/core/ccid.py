@@ -36,6 +36,7 @@ from .utils import (
     SCHEME_STEAM,
     TYPE_HOTP,
     TYPE_TOTP,
+    Capabilities,
     der_pack,
     der_read,
     derive_key,
@@ -212,6 +213,14 @@ class YubiOathCcid(object):
             self._challenge, resp = der_read(resp, TAG_CHALLENGE)
         else:
             self._challenge = None
+
+    @property
+    def capabilities(self):
+        touch = False
+        if self.version >= (4, 2, 6):
+            touch = True
+        algorithms = [ALG_SHA1, ALG_SHA256]
+        return Capabilities(True, algorithms, touch)
 
     @property
     def id(self):

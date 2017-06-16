@@ -28,9 +28,14 @@
 
 from __future__ import print_function
 
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser
+
 from .. import __version__
 from ..core.ccid import open_scard
-from ..core.utils import ALG_SHA1, ALG_SHA256, TYPE_HOTP, TYPE_TOTP, parse_uri
+from ..core.utils import ALG_SHA1, ALG_SHA256, ALG_SHA512, TYPE_HOTP, TYPE_TOTP, parse_uri
 from ..core.exc import NoSpaceError
 from .keystore import get_keystore
 from .controller import CliController
@@ -72,17 +77,29 @@ def print_version(ctx, param, value):
 @click.option('-v', '--version', is_flag=True, callback=print_version,
               expose_value=False, is_eager=True, help='Prints the version of '
               'the application and exits.')
+@click.option('-b', '--backend', default=None, help='OATH storage backend to use')
 @click.option('-r', '--reader', default='YubiKey', help='Name to match '
               'smartcard reader against (case insensitive).')
 @click.option('-R', '--remember', is_flag=True, help='Remember any entered '
               'access key for later use.')
 @click.pass_context
-def cli(ctx, reader, remember):
+def cli(ctx, backend, reader, remember):
     """
     Read OATH one time passwords from a YubiKey.
     """
-    ctx.obj['dev'] = open_scard(reader)
-    ctx.obj['controller'] = CliController(get_keystore(), remember)
+    parser = ConfigParser()
+    parser.read([os.path.join(CONFIG_HOME, 'settings.ini')])
+    if 'settings' in parser:
+        ctx.obj['settings'] = parser['settings']
+    else:
+        ctx.obj['settings'] = {}
+    if backend is None:
+        backend = ctx.obj['settings'].get('backend', 'ccid')
+    if backend == 'ccid':
+        ctx.obj['dev'] = open_scard(reader)
+    else:
+        ctx.fail('Unknown backend "%s"' % (backend,))
+    ctx.obj['controller'] = CliController(get_keystore(), backend, remember)
     ctx.obj['remember'] = remember
 
 
@@ -147,6 +164,9 @@ def put(ctx, key, name, oath_type, hmac_algorithm, digits, imf, touch):
     """
     Stores a new OATH credential in the YubiKey.
     """
+    controller = ctx.obj['controller']
+    dev = ctx.obj['dev'] or ctx.fail('No YubiKey found!')
+
     if key.startswith('otpauth://'):
         parsed = parse_uri(key)
         key = parsed['secret']
@@ -163,8 +183,13 @@ def put(ctx, key, name, oath_type, hmac_algorithm, digits, imf, touch):
         algo = ALG_SHA1
     elif hmac_algorithm == 'SHA256':
         algo = ALG_SHA256
+    elif hmac_algorithm == 'SHA512':
+        algo = ALG_SHA512
     else:
         ctx.fail('Invalid HMAC algorithm')
+
+    if algo not in controller.get_capabilities(dev).algorithms:
+        ctx.fail('Selected HMAC algorithm not supported by device')
 
     if digits == 5 and name.startswith('Steam:'):
         # Steam is a special case where we allow the otpauth
@@ -178,9 +203,6 @@ def put(ctx, key, name, oath_type, hmac_algorithm, digits, imf, touch):
     unpadded = key.upper()
     key = b32decode(unpadded + '=' * (-len(unpadded) % 8))
 
-    controller = ctx.obj['controller']
-
-    dev = ctx.obj['dev'] or ctx.fail('No YubiKey found!')
     name = name or click.prompt('Enter a name for the credential')
     oath_type = TYPE_TOTP if oath_type == 'totp' else TYPE_HOTP
     try:

@@ -27,8 +27,8 @@
 from ..core.ccid import YubiOathCcid
 from ..core.controller import Controller
 from ..core.exc import CardError, DeviceLockedError
-from ..core.utils import TYPE_HOTP
-from .ccid import CardStatus, observe_reader
+from ..core.utils import TYPE_HOTP, Capabilities, kill_scdaemon
+from .ccid import CardStatus, ccid_watcher
 from yubioath.yubicommon.qt.utils import is_minimized
 from .view.get_password import GetPasswordDialog
 from .keystore import get_keystore
@@ -105,9 +105,6 @@ class CredEntry(QtCore.QObject):
         self._controller.delete_cred(self.cred.name)
 
 
-Capabilities = namedtuple('Capabilities', 'ccid otp version')
-
-
 def names(creds):
     return set(c.cred.name for c in creds)
 
@@ -171,25 +168,39 @@ class GuiController(QtCore.QObject, Controller):
         self._app = app
         self._settings = settings
         self._needs_read = False
-        self._reader = None
-        self._creds = None
         self._lock = RLock()
         self._keystore = get_keystore()
         self._current_device_has_ccid_disabled = False
         self.timer = Timer(TIME_PERIOD)
 
-        self.watcher = observe_reader(self.reader_name, self._on_reader)
+        self._init_backend()
 
         self.startTimer(3000)
         self.timer.time_changed.connect(self.refresh_codes)
 
+    def _init_backend(self):
+        self.watcher = None
+        self._reader = None
+        self._creds = None
+
+        if self.backend == 'ccid':
+            self.Connector = YubiOathCcid
+            self.watcher = ccid_watcher(self.reader_name, self._on_reader)
+
     def settings_changed(self):
-        self.watcher.reader_name = self.reader_name
+        self._init_backend()
+        if self.backend == 'ccid':
+            if self._settings.get('kill_scdaemon', False):
+                kill_scdaemon()
         self.refresh_codes()
 
     @property
     def reader_name(self):
         return self._settings.get('reader', 'Yubikey')
+
+    @property
+    def backend(self):
+        return self._settings.get('backend', 'ccid')
 
     @property
     def mute_ccid_disabled_warning(self):
@@ -199,13 +210,13 @@ class GuiController(QtCore.QObject, Controller):
     def mute_ccid_disabled_warning(self, value):
         self._settings['mute_ccid_disabled_warning'] = value
 
-    def unlock(self, std):
-        if std.locked:
-            key = self._keystore.get(std.id)
+    def unlock(self, conn):
+        if conn.locked:
+            key = self._keystore.get(conn.id)
             if not key:
-                self._app.worker.post_fg((self._init_std, std))
+                self._app.worker.post_fg((self._init_conn, conn))
                 return False
-            std.unlock(key)
+            conn.unlock(key)
         return True
 
     @property
@@ -220,11 +231,13 @@ class GuiController(QtCore.QObject, Controller):
 
     def get_capabilities(self):
         with self._lock:
-            ccid_dev = self.watcher.open()
-            if ccid_dev:
-                dev = YubiOathCcid(ccid_dev)
-                return Capabilities(True, None, dev.version)
-            return Capabilities(None, None, (0, 0, 0))
+            device = self.watcher.open()
+
+            if device:
+                conn = self.Connector(device)
+                return conn.capabilities
+
+            return Capabilities(None, [], False)
 
     def get_entry_names(self):
         return names(self._creds)
@@ -237,16 +250,16 @@ class GuiController(QtCore.QObject, Controller):
                 if is_minimized(self._app.window):
                     self._needs_read = True
                 else:
-                    ccid_dev = watcher.open()
-                    if ccid_dev:
+                    device = watcher.open()
+                    if device:
                         try:
-                            std = YubiOathCcid(ccid_dev)
+                            conn = self.Connector(device)
                         except CardError:
                             self._reader = None
                             self._creds = None
                             self.changed.emit()
                             return
-                        self._app.worker.post_fg((self._init_std, std))
+                        self._app.worker.post_fg((self._init_conn, conn))
                     else:
                         self._needs_read = True
             elif self._needs_read:
@@ -256,28 +269,28 @@ class GuiController(QtCore.QObject, Controller):
             self._creds = None
             self.changed.emit()
 
-    def _init_std(self, std):
+    def _init_conn(self, conn):
         with self._lock:
-            while std.locked:
-                if self._keystore.get(std.id) is None:
+            while conn.locked:
+                if self._keystore.get(conn.id) is None:
                     dialog = GetPasswordDialog(get_active_window())
                     if dialog.exec_():
-                        self._keystore.put(std.id,
-                                           std.calculate_key(dialog.password),
+                        self._keystore.put(conn.id,
+                                           conn.calculate_key(dialog.password),
                                            dialog.remember)
                     else:
                         return
                 try:
-                    std.unlock(self._keystore.get(std.id))
+                    conn.unlock(self._keystore.get(conn.id))
                 except CardError as exc:
-                    self._keystore.delete(std.id)
+                    self._keystore.delete(conn.id)
                     if exc.status == 0x6a80:
                         # wrong syntax (bad password)
                         pass
                     else:
                         # unknown, don't retry
                         return
-            self.refresh_codes(self.timer.time, std)
+            self.refresh_codes(self.timer.time, conn)
 
     def _await(self):
         self._creds = None
@@ -319,22 +332,22 @@ class GuiController(QtCore.QObject, Controller):
             if cred.oath_type == TYPE_HOTP:
                 ttl = INF
 
-            ccid_dev = self.watcher.open()
-            if not ccid_dev:
+            device = self.watcher.open()
+            if not device:
                 if self.watcher.status != CardStatus.Present:
                     self._set_creds(None)
                 return
-            dev = YubiOathCcid(ccid_dev)
-            if self.unlock(dev):
-                return Code(dev.calculate(cred.name, cred.oath_type, timestamp),
+            conn = self.Connector(device)
+            if self.unlock(conn):
+                return Code(conn.calculate(cred.name, cred.oath_type, timestamp),
                             timestamp, ttl)
 
-    def _refresh_codes_worker(self, timestamp=None, std=None):
+    def _refresh_codes_worker(self, timestamp=None, conn=None):
         with self._lock:
-            if not std:
+            if not conn:
                 device = self.watcher.open()
             else:
-                device = std._device
+                device = conn._device
             self._needs_read = bool(self._reader and device is None)
             timestamp = timestamp or self.timer.time
             try:
@@ -343,19 +356,19 @@ class GuiController(QtCore.QObject, Controller):
                 creds = []
             self._set_creds(creds)
 
-    def refresh_codes(self, timestamp=None, std=None):
+    def refresh_codes(self, timestamp=None, conn=None):
         if not self._reader and self.watcher.reader:
             return self._on_reader(self.watcher, self.watcher.reader)
         elif is_minimized(self._app.window):
             self._needs_read = True
             return
-        self._app.worker.post_bg((self._refresh_codes_worker, timestamp, std))
+        self._app.worker.post_bg((self._refresh_codes_worker, timestamp, conn))
 
     def timerEvent(self, event):
         if not is_minimized(self._app.window):
             if self._reader and self._needs_read:
                 self.refresh_codes()
-            elif self._reader is None:
+            elif self._reader is None and self.backend == 'ccid':
                 if ccid_supported_but_disabled():
                     if not self._current_device_has_ccid_disabled:
                         self.ccid_disabled.emit()
@@ -367,32 +380,32 @@ class GuiController(QtCore.QObject, Controller):
 
     def add_cred(self, *args, **kwargs):
         with self._lock:
-            ccid_dev = self.watcher.open()
-            if ccid_dev:
-                dev = YubiOathCcid(ccid_dev)
-                if self.unlock(dev):
-                    super(GuiController, self).add_cred(dev, *args, **kwargs)
+            device = self.watcher.open()
+            if device:
+                conn = self.Connector(device)
+                if self.unlock(conn):
+                    super(GuiController, self).add_cred(conn, *args, **kwargs)
                     self._creds = None
                     self.refresh_codes()
 
     def delete_cred(self, name):
         with self._lock:
-            ccid_dev = self.watcher.open()
-            if ccid_dev:
-                dev = YubiOathCcid(ccid_dev)
-                if self.unlock(dev):
-                    super(GuiController, self).delete_cred(dev, name)
+            device = self.watcher.open()
+            if device:
+                conn = self.Connector(device)
+                if self.unlock(conn):
+                    super(GuiController, self).delete_cred(conn, name)
                     self._creds = None
                     self.refresh_codes()
 
     def set_password(self, password, remember=False):
         with self._lock:
-            ccid_dev = self.watcher.open()
-            if ccid_dev:
-                dev = YubiOathCcid(ccid_dev)
-                if self.unlock(dev):
-                    key = super(GuiController, self).set_password(dev, password)
-                    self._keystore.put(dev.id, key, remember)
+            device = self.watcher.open()
+            if device:
+                conn = self.Connector(device)
+                if self.unlock(conn):
+                    key = super(GuiController, self).set_password(conn, password)
+                    self._keystore.put(conn.id, key, remember)
 
     def start(self):
         self.watcher.active()

@@ -179,8 +179,9 @@ class YubiOathApplication(qt.Application):
         self._password_action.setEnabled(enabled)
 
     def _on_shown(self, event):
-        if self._settings.get('kill_scdaemon', False):
-            kill_scdaemon()
+        if self._controller.backend == 'ccid':
+            if self._settings.get('kill_scdaemon', False):
+                kill_scdaemon()
 
         if not self._widget:
             self._widget = MainWidget(self._controller)
@@ -214,10 +215,10 @@ class YubiOathApplication(qt.Application):
 
     def _add_credential(self):
         c = self._controller.get_capabilities()
-        if c.ccid:
+        if c.present:
             dialog = AddCredDialog(
                 self.worker,
-                c.version,
+                c,
                 self._controller.get_entry_names(),
                 parent=self.window)
             if dialog.exec_():

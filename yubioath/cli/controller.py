@@ -33,12 +33,22 @@ import sys
 
 class CliController(Controller):
 
-    def __init__(self, keystore, save=False):
+    def __init__(self, keystore, backend, save=False):
         self.keystore = keystore
         self._save = save
+        self.backend = backend
+        self._init_backend()
+
+    def _init_backend(self):
+        if self.backend == 'ccid':
+            self.Connector = YubiOathCcid
 
     def _prompt_touch(self):
         sys.stderr.write('Touch your YubiKey...\n')
+
+    def get_capabilities(self, device):
+        conn = self.Connector(device)
+        return conn.capabilities
 
     def unlock(self, device):
         key = self.keystore.get(device.id)
@@ -61,24 +71,24 @@ class CliController(Controller):
             except CardError:
                 sys.stderr.write('Incorrect password!\n')
 
-    def set_password(self, ccid_dev, password, remember=False):
-        dev = YubiOathCcid(ccid_dev)
-        key = super(CliController, self).set_password(dev, password)
+    def set_password(self, dev, password, remember=False):
+        conn = self.Connector(dev)
+        key = super(CliController, self).set_password(conn, password)
         if remember:
-            self.keystore.put(dev.id, key)
+            self.keystore.put(conn.id, key)
             sys.stderr.write('Password saved to %s\n' % self.keystore.fname)
         else:
-            self.keystore.delete(dev.id)
+            self.keystore.delete(conn.id)
 
-    def add_cred(self, ccid_dev, *args, **kwargs):
-        dev = YubiOathCcid(ccid_dev)
-        super(CliController, self).add_cred(dev, *args, **kwargs)
+    def add_cred(self, dev, *args, **kwargs):
+        conn = self.Connector(dev)
+        super(CliController, self).add_cred(conn, *args, **kwargs)
 
-    def delete_cred(self, ccid_dev, name):
-        dev = YubiOathCcid(ccid_dev)
-        super(CliController, self).delete_cred(dev, name)
+    def delete_cred(self, dev, name):
+        conn = self.Connector(dev)
+        super(CliController, self).delete_cred(conn, name)
 
-    def reset_device(self, ccid_dev):
-        dev = YubiOathCcid(ccid_dev)
-        self.keystore.delete(dev.id)
-        super(CliController, self).reset_device(dev)
+    def reset_device(self, dev):
+        conn = self.Connector(dev)
+        self.keystore.delete(conn.id)
+        super(CliController, self).reset_device(conn)

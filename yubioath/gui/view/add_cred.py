@@ -25,7 +25,7 @@
 # for the parts of OpenSSL used as well as that of the covered work.
 
 from yubioath.yubicommon import qt
-from ...core.utils import ALG_SHA1, ALG_SHA256, TYPE_TOTP, TYPE_HOTP, parse_uri
+from ...core.utils import ALG_SHA1, ALG_SHA256, ALG_SHA512, TYPE_TOTP, TYPE_HOTP, parse_uri
 from .. import messages as m
 from ..qrparse import parse_qr_codes
 from ..qrdecode import decode_qr_data
@@ -34,6 +34,13 @@ from base64 import b32decode
 import re
 
 NAME_VALIDATOR = QtGui.QRegExpValidator(QtCore.QRegExp(r'.{3,}'))
+
+algorithm_names = {
+    # ID: (UI name, otpauth URI name)
+    ALG_SHA1: ('SHA-1', 'SHA1'),
+    ALG_SHA256: ('SHA-256', 'SHA256'),
+    ALG_SHA512: ('SHA-512', 'SHA512'),
+}
 
 
 class B32Validator(QtGui.QValidator):
@@ -58,11 +65,11 @@ class B32Validator(QtGui.QValidator):
 
 class AddCredDialog(qt.Dialog):
 
-    def __init__(self, worker, version, existing_entry_names, parent=None):
+    def __init__(self, worker, caps, existing_entry_names, parent=None):
         super(AddCredDialog, self).__init__(parent)
 
         self._worker = worker
-        self._version = version
+        self._caps = caps
         self.setWindowTitle(m.add_cred)
         self._existing_entry_names = existing_entry_names
         self._build_ui()
@@ -98,13 +105,19 @@ class AddCredDialog(qt.Dialog):
         self._n_digits.addItems(['6', '8'])
         layout.addRow(m.n_digits, self._n_digits)
 
+        algorithm_name = {
+            ALG_SHA1: 'SHA-1',
+            ALG_SHA256: 'SHA-256',
+            ALG_SHA512: 'SHA-512',
+        }
+
         self._algorithm = QtWidgets.QComboBox()
-        self._algorithm.addItems(['SHA-1', 'SHA-256'])
+        for algorithm in self._caps.algorithms:
+            self._algorithm.addItem(algorithm_name[algorithm], algorithm)
         layout.addRow(m.algorithm, self._algorithm)
 
         self._require_touch = QtWidgets.QCheckBox(m.require_touch)
-        # Touch-required support not available before 4.2.6
-        if self._version >= (4, 2, 6):
+        if self._caps.touch:
             layout.addRow(self._require_touch)
 
         btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok |
@@ -129,11 +142,18 @@ class AddCredDialog(qt.Dialog):
         self._worker.post(m.qr_scanning, (self._do_scan_qr, qimage),
                           self._handle_qr)
 
+    def _get_otpauth_algo_id(self, algo):
+        for key, names in algorithm_names.items():
+            if algo == names[1]:
+                return key
+        return None
+
     def _handle_qr(self, parsed):
         if parsed:
             otp_type = parsed['type'].lower()
             n_digits = parsed.get('digits', '6')
             algo = parsed.get('algorithm', 'SHA1').upper()
+            algo_id = self._get_otpauth_algo_id(algo)
 
             if otp_type not in ['totp', 'hotp']:
                 QtWidgets.QMessageBox.warning(
@@ -147,13 +167,11 @@ class AddCredDialog(qt.Dialog):
                     m.qr_invalid_digits,
                     m.qr_invalid_digits_desc)
                 return
-            if algo not in ['SHA1', 'SHA256']:
-                # RFC6238 says SHA512 is also supported,
-                # but it's not implemented here yet.
+            if algo_id not in self._caps.algorithms:
                 QtWidgets.QMessageBox.warning(
                     self,
                     m.qr_invalid_algo,
-                    m.qr_invalid_algo_desc)
+                    m.qr_invalid_algo_desc % (algo,))
                 return
             for needed in ['name', 'secret']:
                 if needed not in parsed:
@@ -166,7 +184,7 @@ class AddCredDialog(qt.Dialog):
             self._cred_name.setText(parsed['name'])
             self._cred_key.setText(parsed['secret'])
             self._n_digits.setCurrentIndex(0 if n_digits == '6' else 1)
-            self._algorithm.setCurrentIndex(0 if algo == 'SHA1' else 1)
+            self._algorithm.setCurrentIndex(self._algorithm.findData(algo_id))
             if otp_type == 'totp':
                 self._cred_totp.setChecked(True)
             else:

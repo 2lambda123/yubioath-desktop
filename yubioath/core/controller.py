@@ -25,7 +25,6 @@
 # for the parts of OpenSSL used as well as that of the covered work.
 
 
-from .ccid import YubiOathCcid
 from .exc import CardError
 
 
@@ -40,17 +39,17 @@ class Controller(object):
     def unlock(self, std):
         raise ValueError('Password required')
 
-    def read_creds(self, ccid_dev, timestamp):
+    def read_creds(self, device, timestamp):
         results = []
         key_found = False
 
-        if ccid_dev:
+        if device:
             try:
-                std = YubiOathCcid(ccid_dev)
+                conn = self.Connector(device)
                 key_found = True
-                if std.locked:
-                    self.unlock(std)
-                results.extend(std.calculate_all(timestamp))
+                if conn.locked:
+                    self.unlock(conn)
+                results.extend(conn.calculate_all(timestamp))
             except CardError:
                 pass  # No applet?
 
