@@ -128,3 +128,5 @@ no_space = "No space available"
 no_space_desc = "There is not enough space to add another " \
     "credential on your device.\n\nTo create free space to add a " \
     "new credential, delete those you no longer need."
+oath_backend = "OATH Storage Backend"
+oath_backend_ccid = "Smart Card"

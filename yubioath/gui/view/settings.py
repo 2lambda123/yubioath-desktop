@@ -28,8 +28,6 @@ from yubioath.yubicommon import qt
 from .. import messages as m
 from PyQt5 import QtWidgets
 
-INDENT = 16
-
 
 class SettingsDialog(qt.Dialog):
 
@@ -57,6 +55,15 @@ class SettingsDialog(qt.Dialog):
         self._kill_scdaemon.setToolTip(m.tt_kill_scdaemon)
         layout.addRow(self._kill_scdaemon)
 
+        layout.addRow(self.section(m.oath_backend))
+
+        # OATH storage backend
+        self._backend = QtWidgets.QComboBox()
+        self._backend.addItem(m.oath_backend_ccid, 'ccid')
+        layout.addRow(self._backend)
+
+        layout.addRow(self.section(m.oath_backend_ccid))
+
         # Reader name
         self._reader_name = QtWidgets.QLineEdit()
         self._reader_name.setToolTip(m.tt_reader_name)
@@ -70,9 +77,8 @@ class SettingsDialog(qt.Dialog):
 
     def _reset(self):
         self._systray.setChecked(self.settings.get('systray', False))
-        self._kill_scdaemon.setChecked(
-            self.settings.get('kill_scdaemon', False))
-
+        self._kill_scdaemon.setChecked(self.settings.get('kill_scdaemon', False))
+        self._backend.setCurrentIndex(self._backend.findData(self.settings.get('backend', 'ccid')))
         self._reader_name.setText(self.settings.get('reader', 'Yubikey'))
 
     @property
@@ -87,7 +93,12 @@ class SettingsDialog(qt.Dialog):
     def reader_name(self):
         return self._reader_name.text()
 
+    @property
+    def backend(self):
+        return self._backend.itemData(self._backend.currentIndex())
+
     def _save(self):
         self.settings['systray'] = self.systray
         self.settings['kill_scdaemon'] = self.kill_scdaemon
+        self.settings['backend'] = self.backend
         self.settings['reader'] = self.reader_name
