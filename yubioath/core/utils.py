@@ -35,7 +35,7 @@ try:
     from urllib import unquote
 except ImportError:
     from urllib.parse import unquote, urlparse, parse_qs
-import hashlib
+from collections import namedtuple
 import os
 import subprocess
 import struct
@@ -104,17 +104,18 @@ def hmac_sha1(secret, message):
 
 def hmac_shorten_key(key, algo):
     if algo == ALG_SHA1:
-        h = hashlib.sha1()
+        h = hashes.SHA1()
     elif algo == ALG_SHA256:
-        h = hashlib.sha256()
+        h = hashes.SHA256()
     elif algo == ALG_SHA512:
-        h = hashlib.sha512()
+        h = hashes.SHA512()
     else:
         raise ValueError('Unsupported algorithm!')
 
     if len(key) > h.block_size:
-        h.update(key)
-        key = h.digest()
+        ctx = hashes.Hash(h, default_backend())
+        ctx.update(key)
+        key = ctx.finalize()
 
     return key
 
