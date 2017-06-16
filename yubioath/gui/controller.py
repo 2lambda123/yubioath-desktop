@@ -24,9 +24,10 @@
 # non-source form of such a combination shall include the source code
 # for the parts of OpenSSL used as well as that of the covered work.
 
-from ..core.standard import (YubiOathCcid, TYPE_HOTP)
+from ..core.ccid import YubiOathCcid
 from ..core.controller import Controller
 from ..core.exc import CardError, DeviceLockedError
+from ..core.utils import TYPE_HOTP
 from .ccid import CardStatus, observe_reader
 from yubioath.yubicommon.qt.utils import is_minimized
 from .view.get_password import GetPasswordDialog

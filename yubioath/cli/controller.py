@@ -25,7 +25,7 @@
 # for the parts of OpenSSL used as well as that of the covered work.
 
 from ..core.controller import Controller
-from ..core.standard import YubiOathCcid
+from ..core.ccid import YubiOathCcid
 from ..core.exc import CardError
 from getpass import getpass
 import sys

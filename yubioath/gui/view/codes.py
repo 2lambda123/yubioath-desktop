@@ -26,7 +26,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from .. import messages as m
-from ...core.standard import TYPE_HOTP
+from ...core.utils import TYPE_HOTP
 from yubioath.yubicommon.qt.utils import connect_once
 from time import time
 

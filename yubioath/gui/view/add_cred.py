@@ -25,8 +25,7 @@
 # for the parts of OpenSSL used as well as that of the covered work.
 
 from yubioath.yubicommon import qt
-from ...core.standard import ALG_SHA1, ALG_SHA256, TYPE_TOTP, TYPE_HOTP
-from ...core.utils import parse_uri
+from ...core.utils import ALG_SHA1, ALG_SHA256, TYPE_TOTP, TYPE_HOTP, parse_uri
 from .. import messages as m
 from ..qrparse import parse_qr_codes
 from ..qrdecode import decode_qr_data

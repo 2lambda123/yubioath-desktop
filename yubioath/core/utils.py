@@ -35,6 +35,7 @@ try:
     from urllib import unquote
 except ImportError:
     from urllib.parse import unquote, urlparse, parse_qs
+import hashlib
 import os
 import subprocess
 import struct
@@ -44,14 +45,36 @@ import sys
 import re
 
 __all__ = [
-    'hmac_sha1',
-    'derive_key',
+    'ALG_SHA1',
+    'ALG_SHA256',
+    'ALG_SHA512',
+    'SCHEME_STANDARD',
+    'SCHEME_STEAM',
+    'TYPE_HOTP',
+    'TYPE_TOTP',
     'der_pack',
     'der_read',
+    'derive_key',
+    'format_code',
+    'format_code_steam',
+    'format_truncated',
     'get_random_bytes',
-    'timeit'
+    'hmac_sha1',
+    'hmac_shorten_key',
+    'timeit',
 ]
 
+SCHEME_STANDARD = 0x00
+SCHEME_STEAM = 0x01
+
+TYPE_HOTP = 0x10
+TYPE_TOTP = 0x20
+
+ALG_SHA1 = 0x01
+ALG_SHA256 = 0x02
+ALG_SHA512 = 0x03
+
+STEAM_CHAR_TABLE = "23456789BCDFGHJKMNPQRTVWXY"
 
 def timeit(f):
 
@@ -79,6 +102,23 @@ def hmac_sha1(secret, message):
     return h.finalize()
 
 
+def hmac_shorten_key(key, algo):
+    if algo == ALG_SHA1:
+        h = hashlib.sha1()
+    elif algo == ALG_SHA256:
+        h = hashlib.sha256()
+    elif algo == ALG_SHA512:
+        h = hashlib.sha512()
+    else:
+        raise ValueError('Unsupported algorithm!')
+
+    if len(key) > h.block_size:
+        h.update(key)
+        key = h.digest()
+
+    return key
+
+
 def get_random_bytes(n):
     return os.urandom(n)
 
@@ -98,6 +138,23 @@ def parse_truncated(resp):
 
 def format_code(code, digits=6):
     return ('%%0%dd' % digits) % (code % 10 ** digits)
+
+
+def format_code_steam(int_data, digits):
+    chars = []
+    for i in range(5):
+        chars.append(STEAM_CHAR_TABLE[int_data % len(STEAM_CHAR_TABLE)])
+        int_data //= len(STEAM_CHAR_TABLE)
+    return ''.join(chars)
+
+
+def format_truncated(t_resp, scheme=SCHEME_STANDARD):
+    digits, data = byte2int(t_resp[0]), t_resp[1:]
+    int_data = parse_truncated(data)
+    if scheme == SCHEME_STANDARD:
+        return format_code(int_data, digits)
+    elif scheme == SCHEME_STEAM:
+        return format_code_steam(int_data, digits)
 
 
 def parse_uri(uri):
