@@ -254,6 +254,9 @@ class YubiOathCcid(object):
         if not self.locked:
             return
 
+        if key is None:
+            key = b''
+
         response = hmac_sha1(key, self._challenge)
         challenge = get_random_bytes(8)
         verification = hmac_sha1(key, challenge)
