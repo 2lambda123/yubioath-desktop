@@ -233,7 +233,8 @@ class YubiOathApplication(qt.Application):
                             oath_type=dialog.oath_type,
                             digits=dialog.n_digits,
                             algo=dialog.algorithm,
-                            require_touch=dialog.require_touch)
+                            require_touch=dialog.require_touch,
+                            require_manual_refresh=dialog.require_manual_refresh)
                     except NoSpaceError:
                         QtWidgets.QMessageBox.critical(
                             self.window, m.no_space, m.no_space_desc)

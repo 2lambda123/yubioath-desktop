@@ -120,6 +120,10 @@ class AddCredDialog(qt.Dialog):
         if self._caps.touch:
             layout.addRow(self._require_touch)
 
+        self._require_manual_refresh = QtWidgets.QCheckBox(m.require_manual_refresh)
+        if self._caps.manual:
+            layout.addRow(self._require_manual_refresh)
+
         btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok |
                                       QtWidgets.QDialogButtonBox.Cancel)
         btns.accepted.connect(self._save)
@@ -239,3 +243,7 @@ class AddCredDialog(qt.Dialog):
     @property
     def require_touch(self):
         return self._require_touch.isChecked()
+
+    @property
+    def require_manual_refresh(self):
+        return self._require_manual_refresh.isChecked()

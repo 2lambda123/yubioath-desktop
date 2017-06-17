@@ -98,7 +98,7 @@ def timeit(f):
 # Device interface related
 #
 
-Capabilities = namedtuple('Capabilities', 'present algorithms touch')
+Capabilities = namedtuple('Capabilities', 'present algorithms touch manual')
 
 
 #

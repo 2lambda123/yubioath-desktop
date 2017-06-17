@@ -141,6 +141,7 @@ class Credential(object):
         self.oath_type = oath_type
         self.name = name
         self.touch = touch
+        self.manual = False
 
     def calculate(self, timestamp=None):
         return self._ykoath.calculate(self.name, self.oath_type, timestamp)
@@ -220,7 +221,7 @@ class YubiOathCcid(object):
         if self.version >= (4, 2, 6):
             touch = True
         algorithms = [ALG_SHA1, ALG_SHA256]
-        return Capabilities(True, algorithms, touch)
+        return Capabilities(True, algorithms, touch, False)
 
     @property
     def id(self):
@@ -342,7 +343,8 @@ class YubiOathCcid(object):
         return results
 
     def put(self, name, key, oath_type=TYPE_TOTP, algo=ALG_SHA1, digits=6,
-            imf=0, always_increasing=False, require_touch=False):
+            imf=0, always_increasing=False, require_touch=False,
+            require_manual_refresh=False):
         if algo not in [ALG_SHA1, ALG_SHA256]:
             raise ValueError("Unsupported algorithm")
         ensure_unlocked(self)

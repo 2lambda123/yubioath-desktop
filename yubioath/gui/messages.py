@@ -94,6 +94,7 @@ This action cannot be undone.
 free = "free"
 in_use = "in use"
 require_touch = "Require touch"
+require_manual_refresh = "Require manual refresh"
 overwrite_entry = "Overwrite entry?"
 overwrite_entry_desc = "An entry with this username already exists.\n\nDo " \
     "you wish to overwrite it? This action cannot be undone."

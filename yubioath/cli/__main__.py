@@ -159,8 +159,9 @@ def show(ctx, query, timestamp):
 @click.option(
     '-I', '--imf', type=int, default=0, help='Initial moving factor.')
 @click.option('-T', '--touch', is_flag=True, help='Require touch.')
+@click.option('-M', '--manual', is_flag=True, help='Require manual refresh.')
 @click.pass_context
-def put(ctx, key, name, oath_type, hmac_algorithm, digits, imf, touch):
+def put(ctx, key, name, oath_type, hmac_algorithm, digits, imf, touch, manual):
     """
     Stores a new OATH credential in the YubiKey.
     """
@@ -207,7 +208,8 @@ def put(ctx, key, name, oath_type, hmac_algorithm, digits, imf, touch):
     oath_type = TYPE_TOTP if oath_type == 'totp' else TYPE_HOTP
     try:
         controller.add_cred(dev, name, key, oath_type, digits=digits,
-                            imf=imf, algo=algo, require_touch=touch)
+                            imf=imf, algo=algo, require_touch=touch,
+                            require_manual_refresh=manual)
     except NoSpaceError:
         ctx.fail(
             'There is not enough space to add another credential on your'

@@ -70,7 +70,9 @@ class CredEntry(QtCore.QObject):
 
     @property
     def manual(self):
-        return self.cred.touch or self.cred.oath_type == TYPE_HOTP
+        return self.cred.touch or \
+            self.cred.manual or \
+            self.cred.oath_type == TYPE_HOTP
 
     def calculate(self):
         window = get_active_window()
