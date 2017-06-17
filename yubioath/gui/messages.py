@@ -44,6 +44,7 @@ menu_file = "&File"
 menu_help = "&Help"
 action_about = "&About"
 action_add = "&Add..."
+action_reset = "&Reset"
 action_password = "Set/Change &password"
 action_settings = "&Settings"
 action_delete = "&Delete"
@@ -84,6 +85,12 @@ pass_mismatch = "Passwords do not match"
 pass_mismatch_desc = "Please enter the same password twice"
 touch_title = "Touch required"
 touch_desc = "Touch your YubiKey now"
+reset_title = "Confirm reset"
+reset_warning_desc = """<span>Are you sure you want to delete all OATH credentials on the device?</span>
+<br><br>
+<b>This action cannot be undone.</b>
+<br><br>
+"""
 delete_title = "Confirm credential deletion"
 delete_desc_1 = """<span>Are you sure you want to delete the credential?</span>
 <br>

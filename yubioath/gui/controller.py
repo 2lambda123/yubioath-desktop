@@ -416,6 +416,16 @@ class GuiController(QtCore.QObject, Controller):
                     key = super(GuiController, self).set_password(conn, password)
                     self._keystore.put(conn.id, key, remember)
 
+    def reset_device(self):
+        with self._lock:
+            device = self.watcher.open()
+            if device:
+                conn = self.Connector(device)
+                self._keystore.delete(conn.id)
+                super(GuiController, self).reset_device(conn)
+                self._creds = None
+                self.refresh_codes()
+
     def start(self):
         self.watcher.active()
         self.timer.start()

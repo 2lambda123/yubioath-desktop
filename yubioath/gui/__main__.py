@@ -153,10 +153,15 @@ class YubiOathApplication(qt.Application):
         self._password_action.triggered.connect(self._change_password)
         self._password_action.setEnabled(False)
         file_menu.addAction(self._password_action)
+        file_menu.addSeparator()
+        self._reset_action = QtWidgets.QAction(m.action_reset, file_menu)
+        self._reset_action.triggered.connect(self._reset)
+        self._reset_action.setEnabled(False)
+        file_menu.addAction(self._reset_action)
+        file_menu.addSeparator()
         settings_action = QtWidgets.QAction(m.action_settings, file_menu)
         settings_action.triggered.connect(self._show_settings)
         file_menu.addAction(settings_action)
-        file_menu.addSeparator()
         quit_action = QtWidgets.QAction(m.action_quit, file_menu)
         quit_action.triggered.connect(self._systray.quit)
         file_menu.addAction(quit_action)
@@ -177,6 +182,7 @@ class YubiOathApplication(qt.Application):
     def _refresh_menu(self):
         enabled = bool(self._controller._reader)
         self._password_action.setEnabled(enabled)
+        self._reset_action.setEnabled(enabled)
 
     def _on_shown(self, event):
         if self._controller.backend == 'ccid':
@@ -212,6 +218,19 @@ class YubiOathApplication(qt.Application):
             self.window,
             m.about_1 % m.app_name,
             ABOUT_TEXT % (self.version,))
+
+    def _reset(self):
+        c = self._controller.get_capabilities()
+        if c.present:
+            res = QtWidgets.QMessageBox.warning(self.window,
+                m.reset_title,
+                m.reset_warning_desc,
+                QtWidgets.QMessageBox.Yes,
+                QtWidgets.QMessageBox.No)
+            if res == QtWidgets.QMessageBox.Yes:
+                self._controller.reset_device()
+        else:
+            QtWidgets.QMessageBox.critical(self.window, 'No key', 'No key')
 
     def _add_credential(self):
         c = self._controller.get_capabilities()
