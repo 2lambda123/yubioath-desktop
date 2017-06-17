@@ -60,6 +60,7 @@ class SettingsDialog(qt.Dialog):
         # OATH storage backend
         self._backend = QtWidgets.QComboBox()
         self._backend.addItem(m.oath_backend_ccid, 'ccid')
+        self._backend.addItem(m.oath_backend_sqlite, 'sqlite')
         layout.addRow(self._backend)
 
         layout.addRow(self.section(m.oath_backend_ccid))

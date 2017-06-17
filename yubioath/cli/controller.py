@@ -26,6 +26,7 @@
 
 from ..core.controller import Controller
 from ..core.ccid import YubiOathCcid
+from ..core.sqlite import YubiOathSqlite
 from ..core.exc import CardError
 from getpass import getpass
 import sys
@@ -42,6 +43,8 @@ class CliController(Controller):
     def _init_backend(self):
         if self.backend == 'ccid':
             self.Connector = YubiOathCcid
+        elif self.backend == 'sqlite':
+            self.Connector = YubiOathSqlite
 
     def _prompt_touch(self):
         sys.stderr.write('Touch your YubiKey...\n')

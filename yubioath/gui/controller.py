@@ -24,11 +24,14 @@
 # non-source form of such a combination shall include the source code
 # for the parts of OpenSSL used as well as that of the covered work.
 
+from ..cli.keystore import CONFIG_HOME
 from ..core.ccid import YubiOathCcid
+from ..core.sqlite import YubiOathSqlite
 from ..core.controller import Controller
 from ..core.exc import CardError, DeviceLockedError
 from ..core.utils import TYPE_HOTP, Capabilities, kill_scdaemon
 from .ccid import CardStatus, ccid_watcher
+from .sqlite import sqlite_watcher
 from yubioath.yubicommon.qt.utils import is_minimized
 from .view.get_password import GetPasswordDialog
 from .keystore import get_keystore
@@ -39,6 +42,7 @@ from PyQt5 import QtCore, QtWidgets
 from time import time
 from collections import namedtuple
 from threading import RLock
+import os
 
 
 Code = namedtuple('Code', 'code timestamp ttl')
@@ -188,6 +192,9 @@ class GuiController(QtCore.QObject, Controller):
         if self.backend == 'ccid':
             self.Connector = YubiOathCcid
             self.watcher = ccid_watcher(self.reader_name, self._on_reader)
+        elif self.backend == 'sqlite':
+            self.Connector = YubiOathSqlite
+            self.watcher = sqlite_watcher(os.path.join(CONFIG_HOME, "tokens.db"))
 
     def settings_changed(self):
         self._init_backend()

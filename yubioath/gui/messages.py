@@ -130,3 +130,4 @@ no_space_desc = "There is not enough space to add another " \
     "new credential, delete those you no longer need."
 oath_backend = "OATH Storage Backend"
 oath_backend_ccid = "Smart Card"
+oath_backend_sqlite = "SQLite"

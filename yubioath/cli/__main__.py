@@ -35,13 +35,15 @@ except ImportError:
 
 from .. import __version__
 from ..core.ccid import open_scard
+from ..core.sqlite import open_sqlite
 from ..core.utils import ALG_SHA1, ALG_SHA256, ALG_SHA512, TYPE_HOTP, TYPE_TOTP, parse_uri
 from ..core.exc import NoSpaceError
-from .keystore import get_keystore
+from .keystore import CONFIG_HOME, get_keystore
 from .controller import CliController
 from time import time
 from base64 import b32decode
 import click
+import os
 import sys
 
 
@@ -97,6 +99,8 @@ def cli(ctx, backend, reader, remember):
         backend = ctx.obj['settings'].get('backend', 'ccid')
     if backend == 'ccid':
         ctx.obj['dev'] = open_scard(reader)
+    elif backend == 'sqlite':
+        ctx.obj['dev'] = open_sqlite(os.path.join(CONFIG_HOME, 'tokens.db'))
     else:
         ctx.fail('Unknown backend "%s"' % (backend,))
     ctx.obj['controller'] = CliController(get_keystore(), backend, remember)
