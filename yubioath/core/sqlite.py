@@ -26,12 +26,14 @@
 
 from __future__ import print_function, division
 
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, hmac
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from yubioath.yubicommon.compat import byte2int, int2byte
 
-from .exc import DeviceLockedError
+from .exc import CardError, DeviceLockedError
 from .utils import (
     ALG_SHA1,
     ALG_SHA256,
@@ -41,14 +43,46 @@ from .utils import (
     TYPE_HOTP,
     TYPE_TOTP,
     Capabilities,
-    derive_key,
     format_truncated,
     get_random_bytes,
     hmac_shorten_key,
     time_challenge)
 
+import base64
 import sqlite3
 import struct
+
+
+# We use a different/stronger key derivation for the SQLite backend
+def derive_key(salt, passphrase):
+    if not passphrase:
+        return None
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA384(),
+                     length=32,
+                     salt=salt,
+                     iterations=10000,
+                     backend=default_backend())
+    return kdf.derive(passphrase.encode('utf-8'))
+
+
+def encrypt_token(key, plaintext):
+    assert type(key) == bytes
+    assert len(key) == 32
+
+    keyb64 = base64.b64encode(key)
+
+    f = Fernet(keyb64)
+    return f.encrypt(plaintext)
+
+
+def decrypt_token(key, ciphertext):
+    assert type(key) == bytes
+    assert len(key) == 32
+
+    keyb64 = base64.b64encode(key)
+
+    f = Fernet(keyb64)
+    return f.decrypt(ciphertext)
 
 
 class SQLiteDevice(object):
@@ -157,6 +191,18 @@ class _YubiOathSqlite(object):
     def __init__(self, device):
         self._device = device
         self._id = device.id
+        self._keyval = None
+        self._locked = None
+
+    @property
+    def _key(self):
+        if self._keyval is None:
+            self._keyval = self.calculate_key('default')
+        return self._keyval
+
+    @_key.setter
+    def _key(self, value):
+        self._keyval = value
 
     @property
     def capabilities(self):
@@ -173,7 +219,23 @@ class _YubiOathSqlite(object):
 
     @property
     def locked(self):
-        return False
+        if self._locked is None:
+            c = self._device.conn.cursor()
+            c.execute('SELECT "token" FROM "tokens" LIMIT 1')
+            row = c.fetchone()
+            if row is None:
+                self._locked = False
+                return self._locked
+
+            token = row[0]
+
+            try:
+                decrypt_token(self._key, token)
+                self._locked = False
+            except InvalidToken:
+                self._locked = True
+
+        return self._locked
 
     def delete(self, name):
         ensure_unlocked(self)
@@ -201,6 +263,8 @@ class _YubiOathSqlite(object):
         else:
             raise UnknownAlgorithmError
 
+        key = decrypt_token(self._key, key)
+
         msg = challenge
         ctx = hmac.HMAC(key, h, backend=default_backend())
         ctx.update(msg)
@@ -224,10 +288,40 @@ class _YubiOathSqlite(object):
         return derive_key(self.id, passphrase)
 
     def unlock(self, key):
-        self.locked = False
+        if not self.locked:
+            return
+
+        if key is None:
+            key = self.calculate_key('default')
+
+        self._key = key
+        self._locked = None
+        if self.locked:
+            raise CardError(1, "Invalid password provided")
 
     def set_key(self, key=None):
         ensure_unlocked(self)
+
+        if key is None:
+            key = self.calculate_key('default')
+
+        c = self._device.conn.cursor()
+        c.execute('SELECT "name","token" FROM "tokens"')
+        tokens = []
+
+        # Re-encrypt all tokens
+        for name, token in c:
+            token = decrypt_token(self._key, token)
+            token = encrypt_token(key, token)
+            tokens.append((name, token))
+
+        # Write new tokens to DB
+        for name, token in tokens:
+            c.execute('UPDATE "tokens" SET "token" = ? WHERE "name" = ?',
+                (token, name))
+
+        self._device.conn.commit()
+        self._key = key
 
     def reset(self):
         self._device._wipe_db()
@@ -270,6 +364,7 @@ class _YubiOathSqlite(object):
         counter = imf
         c = self._device.conn.cursor()
         key = hmac_shorten_key(key, algo)
+        key = encrypt_token(self._key, key)
         c.execute('REPLACE INTO "tokens" ("name", "token", "type", "algorithm", "digits", "manual", "counter") VALUES (?, ?, ?, ?, ?, ?, ?)',
             (name, key, oath_type, algo, digits, 1 if require_manual_refresh else 0, counter))
         self._device.conn.commit()
