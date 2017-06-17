@@ -44,6 +44,7 @@ menu_file = "&File"
 menu_help = "&Help"
 action_about = "&About"
 action_add = "&Add..."
+action_import = "&Import..."
 action_reset = "&Reset"
 action_password = "Set/Change &password"
 action_settings = "&Settings"
@@ -91,6 +92,8 @@ reset_warning_desc = """<span>Are you sure you want to delete all OATH credentia
 <b>This action cannot be undone.</b>
 <br><br>
 """
+imported = "Import complete"
+imported_desc = "Found %d tokens, successfully imported %d tokens.%s"
 delete_title = "Confirm credential deletion"
 delete_desc_1 = """<span>Are you sure you want to delete the credential?</span>
 <br>

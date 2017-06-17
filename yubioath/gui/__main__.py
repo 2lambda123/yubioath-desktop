@@ -31,7 +31,7 @@ from yubioath.gui.view.ccid_disabled import CcidDisabledDialog
 from yubioath.yubicommon import qt
 from ..cli.keystore import CONFIG_HOME
 
-from ..core.utils import kill_scdaemon
+from ..core.utils import kill_scdaemon, parse_uri
 from ..core.exc import NoSpaceError
 from . import messages as m
 from .controller import GuiController
@@ -149,6 +149,9 @@ class YubiOathApplication(qt.Application):
         self._add_action = QtWidgets.QAction(m.action_add, file_menu)
         self._add_action.triggered.connect(self._add_credential)
         file_menu.addAction(self._add_action)
+        self._import_action = QtWidgets.QAction(m.action_import, file_menu)
+        self._import_action.triggered.connect(self._import)
+        file_menu.addAction(self._import_action)
         self._password_action = QtWidgets.QAction(m.action_password, file_menu)
         self._password_action.triggered.connect(self._change_password)
         self._password_action.setEnabled(False)
@@ -229,6 +232,38 @@ class YubiOathApplication(qt.Application):
                 QtWidgets.QMessageBox.No)
             if res == QtWidgets.QMessageBox.Yes:
                 self._controller.reset_device()
+        else:
+            QtWidgets.QMessageBox.critical(self.window, 'No key', 'No key')
+
+    def _import(self):
+        c = self._controller.get_capabilities()
+        if c.present:
+            res = QtWidgets.QFileDialog.getOpenFileName(self.window,
+                filter="Text files (*.txt)")
+            filepath = res[0]
+            if filepath:
+                found, imported = 0, 0
+                errors = []
+                for line in open(filepath, 'rt'):
+                    line = line.rstrip()
+                    if line.startswith('otpauth://'):
+                        found += 1
+                        try:
+                            parsed = parse_uri(line)
+                            self._controller.add_parsed(parsed)
+                            imported += 1
+                        except Exception as exc:
+                            errors.append((line, str(exc)))
+                            pass
+                msgbox = QtWidgets.QMessageBox.information
+                error_desc = ''
+                if found != imported:
+                    msgbox = QtWidgets.QMessageBox.warning
+                    error_desc = '<br><br>Import failures:<br>'
+                    for line, error in errors:
+                        error_desc += 'Line: %s, Error: %s<br>' % (line, error)
+                msgbox(self.window, m.imported, m.imported_desc % (found,
+                    imported, error_desc))
         else:
             QtWidgets.QMessageBox.critical(self.window, 'No key', 'No key')
 

@@ -28,8 +28,9 @@ from ..cli.keystore import CONFIG_HOME
 from ..core.ccid import YubiOathCcid
 from ..core.sqlite import YubiOathSqlite
 from ..core.controller import Controller
-from ..core.exc import CardError, DeviceLockedError
-from ..core.utils import TYPE_HOTP, Capabilities, kill_scdaemon
+from ..core.exc import CardError, DeviceLockedError, NoSpaceError
+from ..core.utils import (ALG_SHA1, ALG_SHA256, ALG_SHA512, TYPE_HOTP,
+        TYPE_TOTP, Capabilities, kill_scdaemon)
 from .ccid import CardStatus, ccid_watcher
 from .sqlite import sqlite_watcher
 from yubioath.yubicommon.qt.utils import is_minimized
@@ -39,6 +40,7 @@ from . import messages as m
 from yubioath.core.utils import ccid_supported_but_disabled
 from yubioath.yubicommon.qt import get_active_window
 from PyQt5 import QtCore, QtWidgets
+from base64 import b32decode
 from time import time
 from collections import namedtuple
 from threading import RLock
@@ -386,6 +388,59 @@ class GuiController(QtCore.QObject, Controller):
                     return
             self._current_device_has_ccid_disabled = False
         event.accept()
+
+    def add_parsed(self, parsed):
+        if 'secret' not in parsed:
+            raise ValueError('Missing "secret" parameter')
+        if 'type' not in parsed:
+            raise ValueError('Missing OATH credential type')
+
+        key = parsed['secret']
+        name = parsed.get('name')
+        oath_type = parsed.get('type')
+        hmac_algorithm = parsed.get('algorithm', 'SHA1').upper()
+        digits = int(parsed.get('digits', '6'))
+        imf = int(parsed.get('counter', '0'))
+
+        if oath_type not in ['totp', 'hotp']:
+            raise ValueError('Invalid OATH credential type')
+
+        if hmac_algorithm == 'SHA1':
+            algo = ALG_SHA1
+        elif hmac_algorithm == 'SHA256':
+            algo = ALG_SHA256
+        elif hmac_algorithm == 'SHA512':
+            algo = ALG_SHA512
+        else:
+            raise ValueError('Invalid HMAC algorithm')
+
+        if algo not in self.get_capabilities().algorithms:
+            raise NotImplementedError('Selected HMAC algorithm not supported by device')
+
+        if digits == 5 and name.startswith('Steam:'):
+            # Steam is a special case where we allow the otpauth
+            # URI to contain a 'digits' value of '5'.
+            digits = 6
+
+        if digits not in [6, 8]:
+            raise ValueError('Invalid number of digits for OTP')
+
+        digits = digits or 6
+        unpadded = key.upper()
+        key = b32decode(unpadded + '=' * (-len(unpadded) % 8))
+
+        if not name:
+            raise ValueError('Credential is missing a name')
+
+        oath_type = TYPE_TOTP if oath_type == 'totp' else TYPE_HOTP
+        try:
+            self.add_cred(name, key, oath_type, digits=digits, imf=imf,
+                    algo=algo)
+        except NoSpaceError:
+            raise IOError(
+                'There is not enough space to add another credential on your'
+                ' device. To create free space to add a new '
+                'credential, delete those you no longer need.')
 
     def add_cred(self, *args, **kwargs):
         with self._lock:
