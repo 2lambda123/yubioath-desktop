@@ -37,6 +37,7 @@ Var STARTMENU_FOLDER
   !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\Yubico\Yubico Authenticator"
   !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Start Menu Folder"
   !insertmacro MUI_PAGE_STARTMENU Application $STARTMENU_FOLDER
+  !insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_INSTFILES
   !insertmacro MUI_PAGE_FINISH
 
@@ -47,7 +48,7 @@ Var STARTMENU_FOLDER
   !insertmacro MUI_LANGUAGE "English"
 
 
-Section "Kill process" KillProcess
+Section "-Kill process" KillProcess
   ${nsProcess::FindProcess} "yubioath.exe" $R0
   ${If} $R0 == 0
     DetailPrint "Yubico Authenticator (CLI) is running. Closing..."
@@ -66,13 +67,17 @@ SectionEnd
 
 ;--------------------------------
 
-Section "Yubico Authenticator"
+Section "Yubico Authenticator" Main
   SectionIn RO
   SetOutPath $INSTDIR
   File "..\dist\Yubico Authenticator\*"
   File /nonfatal /r "..\dist\Yubico Authenticator\tcl"
   File /nonfatal /r "..\dist\Yubico Authenticator\tk"
   File /r "..\dist\Yubico Authenticator\qt5_plugins"
+SectionEnd
+
+Section /o "Run at Windows startup" RunAtStartup
+  CreateShortCut "$SMSTARTUP\Yubico Authenticator.lnk" "$INSTDIR\yubioath-gui.exe" "-t" "$INSTDIR\yubioath-gui.exe" 0
 SectionEnd
 
 Var MYTMP
@@ -139,6 +144,7 @@ Section "Uninstall"
 
   Delete "$SMPROGRAMS\$MUI_TEMP\Uninstall.lnk"
   Delete "$SMPROGRAMS\$MUI_TEMP\Yubico Authenticator.lnk"
+  Delete "$SMSTARTUP\Yubico Authenticator.lnk"
 
   ;Delete empty start menu parent diretories
   StrCpy $MUI_TEMP "$SMPROGRAMS\$MUI_TEMP"
