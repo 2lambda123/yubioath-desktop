@@ -75,6 +75,7 @@ ALG_SHA512 = 0x03
 
 STEAM_CHAR_TABLE = "23456789BCDFGHJKMNPQRTVWXY"
 
+
 def timeit(f):
 
     def wrapper(*args, **kw):
