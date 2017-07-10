@@ -48,7 +48,6 @@ from .utils import (
 from smartcard import System
 from smartcard.Exceptions import SmartcardException
 
-import hashlib
 import struct
 import os
 
