@@ -35,7 +35,6 @@ try:
     from urllib import unquote
 except ImportError:
     from urllib.parse import unquote, urlparse, parse_qs
-from collections import namedtuple
 import os
 import subprocess
 import struct
