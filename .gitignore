@@ -20,3 +20,5 @@ man/*.1
 /yubioath-gui.pkg
 /yubioath-script.py
 /yubioath.pkg
+
+/yubioath.sublime-workspace

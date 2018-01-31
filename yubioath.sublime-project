@@ -1,0 +1,23 @@
+{
+		"folders":
+		[
+				{
+						"path": "yubioath",
+						"file_include_patterns": [
+								"*.py",
+						],
+						"folder_exclude_patterns": [
+								"__pycache__",
+						],
+				},
+				{
+						"path": "vendor/yubicommon",
+						"file_include_patterns": [
+								"*.py",
+						],
+						"folder_exclude_patterns": [
+								"__pycache__",
+						],
+				}
+		]
+}
