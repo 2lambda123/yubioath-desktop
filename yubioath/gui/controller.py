@@ -239,7 +239,13 @@ class GuiController(QtCore.QObject, Controller):
                 else:
                     ccid_dev = watcher.open()
                     if ccid_dev:
-                        std = YubiOathCcid(ccid_dev)
+                        try:
+                            std = YubiOathCcid(ccid_dev)
+                        except CardError:
+                            self._reader = None
+                            self._creds = None
+                            self.changed.emit()
+                            return
                         self._app.worker.post_fg((self._init_std, std))
                     else:
                         self._needs_read = True
