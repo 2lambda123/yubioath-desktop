@@ -1,4 +1,10 @@
 * Version 3.1.5 (unreleased)
+ ** Added "Reset" menu option for feature parity with CLI
+ ** Added "Import" menu option to import plain text lists of otpauth:// URIs
+ ** Added experimental SQLite OATH storage backend
+ ** Improved error handling on unexpected YubiKey hotplugs
+ ** Fixed unnecessary re-prompting for token password
+ ** Taught main window to clear search box when minimizing to tray
 
 * Version 3.1.4 (released 2017-07-09, by Steven Noonan <steven@uplinklabs.net>)
  ** Removed support for slot-based storage.
