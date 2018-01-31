@@ -269,8 +269,14 @@ class GuiController(QtCore.QObject, Controller):
                         return
                 try:
                     std.unlock(self._keystore.get(std.id))
-                except CardError:
+                except CardError as exc:
                     self._keystore.delete(std.id)
+                    if exc.status == 0x6a80:
+                        # wrong syntax (bad password)
+                        pass
+                    else:
+                        # unknown, don't retry
+                        return
             self.refresh_codes(self.timer.time, std)
 
     def _await(self):
