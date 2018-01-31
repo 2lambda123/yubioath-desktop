@@ -219,7 +219,10 @@ def b2len(bs):
 def kill_scdaemon():
     for proc in psutil.process_iter():
         if proc.name().lower() in ['scdaemon', 'scdaemon.exe']:
-            proc.kill()
+            try:
+                proc.kill()
+            except psutil.AccessDenied:
+                pass
 
 
 NON_CCID_YK_PIDS = set([0x0110, 0x0113, 0x0114, 0x0401, 0x0402, 0x0403])
