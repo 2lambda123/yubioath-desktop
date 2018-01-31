@@ -1,5 +1,5 @@
 == Yubico Authenticator
-image:https://travis-ci.org/tycho/yubioath-desktop.svg?branch=master["Build Status", link="https://travis-ci.org/tycho/yubioath-desktop"]
+image:https://travis-ci.org/tycho/yubioath-desktop.svg?branch=develop["Build Status", link="https://travis-ci.org/tycho/yubioath-desktop"]
 
 The Yubico Authenticator is a graphical desktop tool and command line tool for
 generating Open AuTHentication (OATH) event-based HOTP and time-based TOTP
