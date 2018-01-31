@@ -114,7 +114,7 @@ class PollerThread(threading.Thread):
                 if hresult != SCARD_S_SUCCESS:
                     raise Exception('Failed to release context: ' +
                                     SCardGetErrorMessage(hresult))
-        except:
+        except:  # noqa: E722
             return []
 
 

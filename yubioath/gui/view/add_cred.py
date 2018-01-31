@@ -50,7 +50,7 @@ class B32Validator(QtGui.QValidator):
         try:
             self.fixup(value)
             return (QtGui.QValidator.Acceptable, value, pos)
-        except:
+        except:  # noqa: E722
             if self.partial.match(value):
                 return (QtGui.QValidator.Intermediate, value, pos)
         return (QtGui.QValidator.Invalid, value, pos)
@@ -119,7 +119,7 @@ class AddCredDialog(qt.Dialog):
                 data = decode_qr_data(qr)
                 if data.startswith('otpauth://'):
                     return parse_uri(data)
-            except:
+            except:  # noqa: E722
                 pass
         return None
 

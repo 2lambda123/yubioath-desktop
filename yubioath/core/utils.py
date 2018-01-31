@@ -253,7 +253,7 @@ def _get_pids_linux():
     def read_hex(path):
         try:
             return int(open(path, 'rt').read().strip(), 16)
-        except:
+        except:  # noqa: E722
             # Probably disappeared while iterating.
             return None
 
