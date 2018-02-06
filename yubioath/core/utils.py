@@ -221,7 +221,7 @@ def kill_scdaemon():
         if proc.name().lower() in ['scdaemon', 'scdaemon.exe']:
             try:
                 proc.kill()
-            except psutil.AccessDenied:
+            except:  # noqa: E722
                 pass
 
 
