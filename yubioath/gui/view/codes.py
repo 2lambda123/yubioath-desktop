@@ -127,7 +127,7 @@ class SearchBox(QtWidgets.QWidget):
 
     def _filter_changed(self):
         search_filter = self._lineedit.text()
-        self._codeswidget.set_search_filter(search_filter)
+        self._codeswidget._set_search_filter(search_filter)
 
     def set_string_list(self, strings):
         self._model.setStringList(strings)
@@ -340,7 +340,7 @@ class CodesWidget(QtWidgets.QWidget):
             stringlist |= set(cred_name.split(':', 1))
         self._searchbox.set_string_list(list(stringlist))
 
-    def set_search_filter(self, search_filter):
+    def _set_search_filter(self, search_filter):
         if len(search_filter) < 1:
             search_filter = None
         self._filter = search_filter
