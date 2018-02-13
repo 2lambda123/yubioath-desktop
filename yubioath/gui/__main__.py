@@ -190,6 +190,8 @@ class YubiOathApplication(qt.Application):
         event.accept()
 
     def _on_hide(self, event):
+        if self._widget:
+            self._widget.codes_widget.clear_search_filter()
         self._controller.forget_passwords()
         self._controller.stop()
         event.accept()

@@ -132,6 +132,9 @@ class SearchBox(QtWidgets.QWidget):
     def set_string_list(self, strings):
         self._model.setStringList(strings)
 
+    def clear(self):
+        self._lineedit.clear()
+
 
 class CodeMenu(QtWidgets.QMenu):
 
@@ -345,6 +348,9 @@ class CodesWidget(QtWidgets.QWidget):
             search_filter = None
         self._filter = search_filter
         self.changed()
+
+    def clear_search_filter(self):
+        self._searchbox.clear()
 
     def changed(self):
         self._scroll_area.takeWidget().deleteLater()
