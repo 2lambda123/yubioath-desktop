@@ -1,4 +1,4 @@
-* Version 3.1.5 (unreleased)
+* Version 3.1.5 (released 2018-02-13, by Steven Noonan <steven@uplinklabs.net>)
  ** Added "Reset" menu option for feature parity with CLI
  ** Added "Import" menu option to import plain text lists of otpauth:// URIs
  ** Added experimental SQLite OATH storage backend
