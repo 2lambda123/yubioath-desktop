@@ -203,7 +203,6 @@ class GuiController(QtCore.QObject, Controller):
         if self.backend == 'ccid':
             if self._settings.get('kill_scdaemon', False):
                 kill_scdaemon()
-        self.refresh_codes()
 
     @property
     def reader_name(self):
