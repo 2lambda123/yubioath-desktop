@@ -73,7 +73,8 @@ Section "Yubico Authenticator" Main
   File "..\dist\Yubico Authenticator\*"
   File /nonfatal /r "..\dist\Yubico Authenticator\tcl"
   File /nonfatal /r "..\dist\Yubico Authenticator\tk"
-  File /r "..\dist\Yubico Authenticator\qt5_plugins"
+  File /nonfatal /r "..\dist\Yubico Authenticator\qt5_plugins"
+  File /nonfatal /r "..\dist\Yubico Authenticator\PyQt5"
 SectionEnd
 
 Section /o "Run at Windows startup" RunAtStartup
