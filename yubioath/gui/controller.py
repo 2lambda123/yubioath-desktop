@@ -196,7 +196,7 @@ class GuiController(QtCore.QObject, Controller):
             self.watcher = ccid_watcher(self.reader_name, self._on_reader)
         elif self.backend == 'sqlite':
             self.Connector = YubiOathSqlite
-            self.watcher = sqlite_watcher(os.path.join(CONFIG_HOME, "tokens.db"))
+            self.watcher = sqlite_watcher(os.path.join(CONFIG_HOME, "tokens.db"), self._on_reader)
 
     def settings_changed(self):
         self._init_backend()

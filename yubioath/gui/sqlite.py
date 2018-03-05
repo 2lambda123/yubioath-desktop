@@ -39,7 +39,7 @@ class SQLiteWatcher(QtCore.QObject):
         self.path = path
         self._callback = callback or (lambda _: _)
         self._device = None
-        self._reader = True
+        self.reader = True
 
     @property
     def status(self):
