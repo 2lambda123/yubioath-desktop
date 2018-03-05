@@ -1,4 +1,4 @@
-* Version 3.1.6 (unreleased)
+* Version 3.1.6 (released 2018-03-04, by Steven Noonan <steven@uplinklabs.net>)
  ** Enabled High DPI support in Qt, which makes things look much nicer on Mac OS X
  ** Fixed another case where re-prompting for the token password repeatedly
  ** Fixed Windows NSIS installer script to work with current PyInstaller/PyQt
