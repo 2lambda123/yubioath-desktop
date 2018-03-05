@@ -24,4 +24,4 @@
 # non-source form of such a combination shall include the source code
 # for the parts of OpenSSL used as well as that of the covered work.
 
-__version__ = "3.1.6"
+__version__ = "3.1.7-dev"
