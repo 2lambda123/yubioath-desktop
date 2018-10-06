@@ -142,7 +142,7 @@ class CardWatcher(QtCore.QObject):
 
         if self._reader is None:
             for reader in added:
-                if self.reader_name in reader:
+                if self.reader_name.lower() in reader.lower():
                     self.reader = reader
                     self._set_status(CardStatus.Present)
                     return
@@ -195,5 +195,5 @@ class CardWatcher(QtCore.QObject):
         self._thread.join()
 
 
-def ccid_watcher(reader_name='Yubikey', callback=None):
+def ccid_watcher(reader_name='YubiKey', callback=None):
     return CardWatcher(reader_name, callback)
