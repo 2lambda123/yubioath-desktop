@@ -32,6 +32,7 @@ from .exc import CardError, DeviceLockedError, NoSpaceError
 from .utils import (
     ALG_SHA1,
     ALG_SHA256,
+    ALG_SHA512,
     SCHEME_STANDARD,
     SCHEME_STEAM,
     TYPE_HOTP,
@@ -222,6 +223,8 @@ class YubiOathCcid(object):
         if self.version >= (4, 2, 6):
             touch = True
         algorithms = [ALG_SHA1, ALG_SHA256]
+        if self.version >= (4, 3, 1):
+            algorithms.append(ALG_SHA512)
         return Capabilities(True, algorithms, touch, False)
 
     @property
@@ -346,7 +349,7 @@ class YubiOathCcid(object):
     def put(self, name, key, oath_type=TYPE_TOTP, algo=ALG_SHA1, digits=6,
             imf=0, always_increasing=False, require_touch=False,
             require_manual_refresh=False):
-        if algo not in [ALG_SHA1, ALG_SHA256]:
+        if algo not in self.capabilities.algorithms:
             raise ValueError("Unsupported algorithm")
         ensure_unlocked(self)
         key = hmac_shorten_key(key, algo)
