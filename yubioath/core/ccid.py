@@ -52,6 +52,7 @@ from smartcard.Exceptions import SmartcardException
 import struct
 import os
 
+HMAC_MINIMUM_KEY_SIZE = 14
 
 YKOATH_AID = b'\xa0\x00\x00\x05\x27\x21\x01\x01'
 YKOATH_NO_SPACE = 0x6a84
@@ -349,6 +350,7 @@ class YubiOathCcid(object):
             raise ValueError("Unsupported algorithm")
         ensure_unlocked(self)
         key = hmac_shorten_key(key, algo)
+        key = key.ljust(HMAC_MINIMUM_KEY_SIZE, b'\x00')
         keydata = int2byte(oath_type | algo) + int2byte(digits) + key
         data = der_pack(TAG_NAME, name.encode('utf8'), TAG_KEY, keydata)
         properties = 0
