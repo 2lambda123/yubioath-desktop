@@ -55,8 +55,10 @@ import os
 
 HMAC_MINIMUM_KEY_SIZE = 14
 
-YKOATH_AID = b'\xa0\x00\x00\x05\x27\x21\x01\x01'
+YKOATH_AID = b'\xa0\x00\x00\x05\x27\x21\x01'
 YKOATH_NO_SPACE = 0x6a84
+
+GP_INS_SELECT = 0xa4
 
 INS_PUT = 0x01
 INS_DELETE = 0x02
@@ -209,7 +211,7 @@ class YubiOathCcid(object):
         return resp
 
     def _select(self):
-        resp = self._send(0xa4, YKOATH_AID, p1=0x04)
+        resp = self._send(GP_INS_SELECT, YKOATH_AID, p1=0x04)
         self._version, resp = der_read(resp, TAG_VERSION)
         self._id, resp = der_read(resp, TAG_NAME)
         if len(resp) != 0:
