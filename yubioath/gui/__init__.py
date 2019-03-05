@@ -29,6 +29,6 @@ try:
     from . import qt_resources
     assert qt_resources  # Silence warnings about unused import
 except ImportError:
-        print(
-            "Could not import GUI resources. Run 'python setup.py"
-            " qt_resources'.")
+    print(
+        "Could not import GUI resources. Run 'python setup.py"
+        " qt_resources'.")

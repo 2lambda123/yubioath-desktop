@@ -311,11 +311,11 @@ class YubiOathApplication(qt.Application):
 
 
 def parse_args():
-        parser = argparse.ArgumentParser(description='Yubico Authenticator',
-                                         add_help=True)
-        parser.add_argument('-t', '--tray', action='store_true', help='starts '
-                            'the application minimized to the systray')
-        return parser.parse_args()
+    parser = argparse.ArgumentParser(description='Yubico Authenticator',
+                                     add_help=True)
+    parser.add_argument('-t', '--tray', action='store_true', help='starts '
+                        'the application minimized to the systray')
+    return parser.parse_args()
 
 
 def main():
