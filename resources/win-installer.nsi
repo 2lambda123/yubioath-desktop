@@ -70,11 +70,7 @@ SectionEnd
 Section "Yubico Authenticator" Main
   SectionIn RO
   SetOutPath $INSTDIR
-  File "..\dist\Yubico Authenticator\*"
-  File /nonfatal /r "..\dist\Yubico Authenticator\tcl"
-  File /nonfatal /r "..\dist\Yubico Authenticator\tk"
-  File /nonfatal /r "..\dist\Yubico Authenticator\qt5_plugins"
-  File /nonfatal /r "..\dist\Yubico Authenticator\PyQt5"
+  File /r "..\dist\Yubico Authenticator\*"
 SectionEnd
 
 Section /o "Run at Windows startup" RunAtStartup
