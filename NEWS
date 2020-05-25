@@ -1,3 +1,5 @@
+* Version 3.1.8 (unreleased)
+
 * Version 3.1.7 (release 2020-05-25, by Steven Noonan <steven@uplinklabs.net>)
  ** Use case-insensitive detection of YubiKey CCID reader.
  ** Fix correctness of CCID behavior around HMAC, OATH AID length, etc
