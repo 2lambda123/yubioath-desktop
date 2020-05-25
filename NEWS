@@ -1,5 +1,9 @@
-* Version 3.1.7 (unreleased)
+* Version 3.1.7 (release 2020-05-25, by Steven Noonan <steven@uplinklabs.net>)
  ** Use case-insensitive detection of YubiKey CCID reader.
+ ** Fix correctness of CCID behavior around HMAC, OATH AID length, etc
+ ** Implemented SHA-512 support for YubiKey 5
+ ** Improve installer build reliability
+ ** Switch to new code signing certificate
 
 * Version 3.1.6 (released 2018-03-04, by Steven Noonan <steven@uplinklabs.net>)
  ** Enabled High DPI support in Qt, which makes things look much nicer on Mac OS X
