@@ -320,10 +320,10 @@ def parse_args():
 
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    app = YubiOathApplication(parse_args())
-    app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     if hasattr(QtCore.Qt, 'AA_UseHighDpiPixmaps'):
-        app.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
+        QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
+    app = YubiOathApplication(parse_args())
     sys.exit(app.exec_())
 
 
