@@ -71,7 +71,7 @@ class TimeleftBar(QtWidgets.QProgressBar):
             # it as soon as the credentials get refreshed.
             self._timeleft = 0
         self._timeleft = min(self._timeleft, self.maximum())
-        self.setValue(self._timeleft)
+        self.setValue(int(self._timeleft))
         if self._timer == 0 and self._timeleft > 0:
             self._timer = self.startTimer(self._refresh_time)
         elif self._timer != 0 and self._timeleft <= 0:
